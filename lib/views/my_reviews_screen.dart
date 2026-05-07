@@ -12,13 +12,32 @@ class MyReviewsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Sección Superior (Fondo gris clarito)
+            // Sección Superior (Fondo gris clarito con el botón X)
             Container(
               width: double.infinity,
               color: Colors.grey.shade200,
-              padding: const EdgeInsets.only(top: 20, bottom: 20),
+              padding: const EdgeInsets.only(top: 16, bottom: 20, left: 24, right: 24),
               child: Column(
                 children: [
+                  // Botón X alineado a la izquierda
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.5),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black, size: 24),
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          Navigator.pop(context); // Regresa al perfil
+                        },
+                      ),
+                    ),
+                  ),
+
                   // Foto de perfil
                   Container(
                     width: 100, 
@@ -26,7 +45,7 @@ class MyReviewsScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.black, width: 2),
-                      color: Colors.yellow.shade200, // Color temporal
+                      color: Colors.yellow.shade200, 
                     ),
                     child: const Icon(Icons.person, size: 60, color: Colors.black54),
                   ),
@@ -52,7 +71,6 @@ class MyReviewsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Título de la sección
                     const Text(
                       'Mis reseñas',
                       style: TextStyle(
@@ -63,7 +81,6 @@ class MyReviewsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Reseña 1
                     _buildReviewItem(
                       restaurantName: 'La cocina de doña licha',
                       userName: 'Pedro Sanchez',
@@ -72,7 +89,6 @@ class MyReviewsScreen extends StatelessWidget {
                       date: '27/03/2067',
                     ),
                     
-                    // Reseña 2
                     _buildReviewItem(
                       restaurantName: 'Caffenio',
                       userName: 'Pedro Sanchez',
@@ -87,14 +103,11 @@ class MyReviewsScreen extends StatelessWidget {
           ],
         ),
       ),
-      
-      // La barra inferior seleccionando el índice 3 (Perfil)
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
     );
   }
 
   // --- FUNCIÓN AYUDANTE --- //
-  // Construye cada bloque de reseña con su línea divisoria al final
   Widget _buildReviewItem({
     required String restaurantName,
     required String userName,
@@ -105,7 +118,6 @@ class MyReviewsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre del restaurante y flecha
         Row(
           children: [
             Text(
@@ -118,11 +130,9 @@ class MyReviewsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        // Fila con foto del usuario y el contenido de la reseña
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Mini foto de perfil
             Container(
               width: 45,
               height: 45,
@@ -135,12 +145,10 @@ class MyReviewsScreen extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             
-            // Textos de la reseña
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Nombre y Estrellas
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -162,14 +170,12 @@ class MyReviewsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   
-                  // Texto de opinión
                   Text(
                     reviewText,
                     style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4),
                   ),
                   const SizedBox(height: 12),
                   
-                  // Fecha
                   Text(
                     date,
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
@@ -181,7 +187,6 @@ class MyReviewsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         
-        // Línea divisoria
         const Divider(color: Colors.black87, thickness: 1),
         const SizedBox(height: 16),
       ],

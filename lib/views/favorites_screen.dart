@@ -12,34 +12,57 @@ class FavoritesScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Sección Superior (Fondo gris clarito)
+            // Sección Superior (Fondo gris con Stack para asegurar la X)
             Container(
               width: double.infinity,
               color: Colors.grey.shade200,
-              padding: const EdgeInsets.only(top: 20, bottom: 20),
-              child: Column(
+              padding: const EdgeInsets.only(top: 16, bottom: 20),
+              child: Stack(
+                alignment: Alignment.topCenter,
                 children: [
-                  // Foto de perfil (un poco más pequeña que en la pantalla principal)
-                  Container(
-                    width: 100, 
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 2),
-                      color: Colors.yellow.shade200, // Color temporal
+                  // Botón X clavado a la izquierda
+                  Positioned(
+                    left: 24,
+                    top: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.5),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.black, size: 24),
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(),
+                        onPressed: () {
+                          Navigator.pop(context); 
+                        },
+                      ),
                     ),
-                    child: const Icon(Icons.person, size: 60, color: Colors.black54),
                   ),
-                  const SizedBox(height: 16),
                   
-                  // Nombre del usuario
-                  const Text(
-                    'Pedro Sanchez',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                  // Foto y Nombre centrados
+                  Column(
+                    children: [
+                      Container(
+                        width: 100, 
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 2),
+                          color: Colors.yellow.shade200, 
+                        ),
+                        child: const Icon(Icons.person, size: 60, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Pedro Sanchez',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -52,7 +75,6 @@ class FavoritesScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Título de la sección
                     const Text(
                       'Mis favoritos',
                       style: TextStyle(
@@ -63,7 +85,6 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Tarjetas de Restaurantes Favoritos
                     _buildFavoriteItem('La cocina de doña Licha', Colors.teal.shade100, Colors.teal),
                     const SizedBox(height: 24),
                     _buildFavoriteItem('Caffenio', Colors.brown.shade100, Colors.brown),
@@ -74,19 +95,15 @@ class FavoritesScreen extends StatelessWidget {
           ],
         ),
       ),
-      
-      // La barra inferior seleccionando el índice 3 (Perfil)
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
     );
   }
 
   // --- FUNCIÓN AYUDANTE --- //
-  // Crea el texto con la flechita y el banner del restaurante
   Widget _buildFavoriteItem(String name, Color bgColor, Color textColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre y flecha
         Row(
           children: [
             Text(
@@ -98,14 +115,12 @@ class FavoritesScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        
-        // Banner del restaurante
         Container(
           width: double.infinity,
-          height: 130, // Altura del banner
+          height: 130, 
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(12), // Bordes redondeados
+            borderRadius: BorderRadius.circular(12), 
           ),
           alignment: Alignment.center,
           child: Text(
