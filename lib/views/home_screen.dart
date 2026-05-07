@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Para el carrusel que se mueve solo
-
-// Importamos todas las pantallas a las que podemos navegar desde aquí
+import 'dart:async'; 
 import '../components/custom_bottom_nav.dart';
 import 'search_screen.dart';
 import 'restaurant_detail_screen.dart';
-import 'favorites_screen.dart';
-
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Calculamos el tamaño de la pantalla para que quepan 2 tarjetas y un cachito
     double screenWidth = MediaQuery.of(context).size.width;
+    // Si la pantalla es más ancha que nuestro cajón (500), topamos el valor a 500.
+    if (screenWidth > 500) {
+      screenWidth = 500;
+    }
     double cardWidth = screenWidth * 0.42;
 
     return Scaffold(
@@ -26,7 +25,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Barra de búsqueda (Funciona como un botón gigante)
+                // 1. Barra de búsqueda 
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -39,7 +38,7 @@ class HomeScreen extends StatelessWidget {
                     );
                   },
                   child: TextField(
-                    enabled: false, // Deshabilitado para que no abra el teclado aquí
+                    enabled: false, 
                     decoration: InputDecoration(
                       hintText: 'Buscar',
                       prefixIcon: const Icon(Icons.search, color: Colors.black54),
@@ -57,18 +56,11 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // 2. Botón de Favoritos (Con su margen corregido)
+                // 2. Botón de Favoritos 
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                                          Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FavoritesScreen(),
-                      ),
-                    );
-                    },
+                    onPressed: () {},
                     icon: const Icon(Icons.favorite_border, color: Colors.black),
                     label: const Text(
                       'Favoritos',
@@ -84,7 +76,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // 3. Banner Destacados del día (Carrusel Automático)
+                // 3. Banner Destacados del día 
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -173,14 +165,12 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       
-      // 8. Nuestra barra de navegación reciclable
       bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
     );
   }
 
   // --- FUNCIONES AYUDANTES --- //
 
-  // Títulos con la flechita
   Widget _buildSectionTitle(String title) {
     return Row(
       children: [
@@ -194,7 +184,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Círculos de categorías
   Widget _buildCategoryItem(IconData icon, String label) {
     return Padding(
       padding: const EdgeInsets.only(right: 20.0),
@@ -217,11 +206,9 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Tarjetas de Restaurantes Grandes (Con navegación al detalle)
   Widget _buildRestaurantCard(BuildContext context, String name, String category, Color imageColor, double width) {
     return GestureDetector(
       onTap: () {
-        // Al tocar la tarjeta, nos vamos a la pantalla gigante del restaurante
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const RestaurantDetailScreen()),

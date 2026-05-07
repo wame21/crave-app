@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'views/login_screen.dart'; // Importamos tu nueva pantalla
+import 'views/home_screen.dart';
+import 'views/login_screen.dart';
+import 'components/responsive_layout.dart'; 
 
 void main() {
   runApp(const MyApp());
@@ -11,12 +13,24 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Quita la etiqueta de "DEBUG"
       title: 'Crave App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'Inter', // Aquí puedes poner la fuente que usaste en Figma después
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white, // Aseguramos que el fondo sea blanco
       ),
-      home: const LoginScreen(), // Le decimos que arranque en tu diseño
+      
+      // AQUÍ ESTÁ LA MAGIA GLOBAL:
+      // El 'builder' intercepta cualquier pantalla antes de dibujarla 
+      // y la mete a fuerza en nuestro ResponsiveLayout.
+      builder: (context, child) {
+        return ResponsiveLayout(
+          child: child!, // 'child' es la pantalla en la que estés en ese momento
+        );
+      },
+      
+      // Ya puedes poner tu HomeScreen normalito aquí
+      home: const LoginScreen(),
     );
   }
 }
