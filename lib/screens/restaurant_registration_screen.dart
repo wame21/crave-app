@@ -80,6 +80,22 @@ class _RestaurantRegistrationScreenState
 
     // 3. Respuesta
     if (result['success']) {
+      final userId = result['user']['id_user'].toString();
+      
+      // Guardamos la sesión
+      await ApiService.guardarSesion(userId);
+
+      // Creamos el restaurante automáticamente para que aparezca en el inicio
+      await ApiService.guardarDatosRestaurante({
+        'id_user': userId,
+        'name': name,
+        'food_type': _selectedCategory,
+        'description': '¡Nuevo restaurante en Crave!',
+        'address': 'Pendiente por definir'
+      });
+
+      if (!mounted) return;
+
       // Éxito: Lo mandamos al perfil del restaurante y borramos el historial
       Navigator.pushAndRemoveUntil(
         context,

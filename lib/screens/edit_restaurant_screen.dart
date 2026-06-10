@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Necesario para el carrusel automático
+import 'dart:async';
+import '../services/api_services.dart';
 
 class EditRestaurantScreen extends StatefulWidget {
   const EditRestaurantScreen({super.key});
@@ -9,10 +10,23 @@ class EditRestaurantScreen extends StatefulWidget {
 }
 
 class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
-  // Estado para los días de la semana
+  bool _isLoading = true;
+  String? _userId;
+
+  // Controladores
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _igController = TextEditingController();
+  final TextEditingController _fbController = TextEditingController();
+
+  // --- NUEVAS VARIABLES DE HORARIO ---
+  TimeOfDay? _horaApertura;
+  TimeOfDay? _horaCierre;
+
+  // Aquí controlamos qué días seleccionas (Lu a Do)
   List<bool> selectedDays = [true, true, true, true, true, true, false];
 
-  // Estado para el ComboBox de la Categoría
   String _selectedCategory = 'Mexicana';
   final List<String> _categorias = [
     'Mexicana',
@@ -25,310 +39,503 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _cargarDatosInteligentes();
+  }
+
+  Future<void> _cargarDatosInteligentes() async {
+    try {
+      final userId = await ApiService.obtenerUsuarioId();
+      if (userId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      final perfil = await ApiService.obtenerPerfil(userId);
+      final miRestaurante = await ApiService.obtenerMiRestaurante(userId);
+
+      if (mounted) {
+        setState(() {
+          _userId = userId;
+
+          if (miRestaurante != null) {
+            _nameController.text = miRestaurante['name'] ?? '';
+            _addressController.text = miRestaurante['address'] ?? '';
+            if (miRestaurante['food_type'] != null &&
+                _categorias.contains(miRestaurante['food_type'])) {
+              _selectedCategory = miRestaurante['food_type'];
+            }
+          } else {
+            _nameController.text = perfil?['profile_name'] ?? '';
+          }
+
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al conectar w.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // --- FUNCIÓN DEL RELOJ ---
+  Future<void> _seleccionarHora(bool esApertura) async {
+    final TimeOfDay? seleccion = await showTimePicker(
+      context: context,
+      initialTime: esApertura
+          ? (_horaApertura ?? const TimeOfDay(hour: 8, minute: 0))
+          : (_horaCierre ?? const TimeOfDay(hour: 20, minute: 0)),
+    );
+
+    if (seleccion != null && mounted) {
+      setState(() {
+        if (esApertura) {
+          _horaApertura = seleccion;
+        } else {
+          _horaCierre = seleccion;
+        }
+      });
+    }
+  }
+
+  Future<void> _guardarCambios() async {
+    if (_userId == null) return;
+    setState(() => _isLoading = true);
+
+    // Si después agregas estas columnas en tu Supabase, aquí ya las tienes empaquetadas:
+    /*
+    String diasActivos = '';
+    final nombresDias = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+    for (int i = 0; i < selectedDays.length; i++) {
+      if (selectedDays[i]) diasActivos += '${nombresDias[i]} ';
+    }
+    String horaAperturaTexto = _horaApertura?.format(context) ?? 'No definida';
+    String horaCierreTexto = _horaCierre?.format(context) ?? 'No definida';
+    */
+
+    final datos = {
+      'id_user': _userId,
+      'name': _nameController.text.trim(),
+      'description': '',
+      'address': _addressController.text.trim(),
+      'food_type': _selectedCategory,
+    };
+
+    final exito = await ApiService.guardarDatosRestaurante(datos);
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      if (exito) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Datos guardados al cien!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hubo un pedo al guardar w.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _igController.dispose();
+    _fbController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Header (Botón X y Título)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 1.5),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.black,
-                          size: 24,
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'Editar Restaurante',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 36),
-                  ],
-                ),
-              ),
-
-              // 2. Banner y Logo con botones de editar
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 140,
-                    decoration: BoxDecoration(color: Colors.pink.shade200),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Banner',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    right: 16,
-                    child: _buildEditIconButton(),
-                  ),
-                  Positioned(
-                    bottom: -40,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.teal.shade100,
-                        border: Border.all(color: Colors.white, width: 4),
-                      ),
-                      child: const Icon(
-                        Icons.restaurant,
-                        size: 40,
-                        color: Colors.teal,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -40,
-                    right: MediaQuery.of(context).size.width / 2 - 60,
-                    child: _buildEditIconButton(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 60),
-
-              // 3. Formulario (Text fields)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.black),
+              )
+            : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildFormRow('Restaurante', 'La cocina de Doña Licha'),
-                    _buildFormRow('Telefono', '687 999 9999'),
-
+                    // 1. Header
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: Row(
                         children: [
-                          const SizedBox(
-                            width: 100,
-                            child: Text(
-                              'Dirección',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 1.5,
                               ),
                             ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 35,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black87),
-                                borderRadius: BorderRadius.circular(8),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.black,
+                                size: 24,
                               ),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.map_outlined,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Editar Restaurante',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
                             ),
                           ),
+                          const SizedBox(width: 36),
                         ],
                       ),
                     ),
-                    const Divider(color: Colors.black, thickness: 1),
 
-                    _buildFormRow('Instagram', '@DoñaLicha'),
-                    _buildFormRow('Facebook', '@DoñaLicha'),
-                    const SizedBox(height: 16),
-
-                    // 4. Horario
-                    const Text(
-                      'Horario',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
+                    // 2. Banner y Logo
+                    Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.bottomCenter,
                       children: [
-                        Expanded(child: _buildFakeDropdown('Apertura')),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildFakeDropdown('Cierre')),
+                        Container(
+                          width: double.infinity,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: Colors.pink.shade200,
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'Banner',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 8,
+                          right: 16,
+                          child: _buildEditIconButton(),
+                        ),
+                        Positioned(
+                          bottom: -40,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.teal.shade100,
+                              border: Border.all(color: Colors.white, width: 4),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant,
+                              size: 40,
+                              color: Colors.teal,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: -40,
+                          right: MediaQuery.of(context).size.width / 2 - 60,
+                          child: _buildEditIconButton(),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 60),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildDayButton(0, 'Lu'),
-                        _buildDayButton(1, 'Ma'),
-                        _buildDayButton(2, 'Mi'),
-                        _buildDayButton(3, 'Ju'),
-                        _buildDayButton(4, 'Vi'),
-                        _buildDayButton(5, 'Sa'),
-                        _buildDayButton(6, 'Do'),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 5. Categoría principal (COMBO BOX REAL)
-                    const Text(
-                      'Categoría principal',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedCategory,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Colors.black87),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: Colors.black,
-                            width: 2,
+                    // 3. Formulario
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildFormRow(
+                            'Restaurante',
+                            _nameController,
+                            hint: 'Nombre de tu negocio',
                           ),
-                        ),
-                      ),
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.black,
-                      ),
-                      items: _categorias.map((String categoria) {
-                        return DropdownMenuItem(
-                          value: categoria,
-                          child: Text(
-                            categoria,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          _buildFormRow(
+                            'Telefono',
+                            _phoneController,
+                            hint: '687 999 9999',
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          if (newValue != null) {
-                            _selectedCategory = newValue;
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
 
-                    // 6. Sección de Imágenes (CARRUSELES EDITABLES)
-                    const Text(
-                      'Menú',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 160,
-                      child: EditableAutoCarousel(
-                        items: [
-                          {'text': 'Menú 1', 'color': Colors.orange.shade200},
-                          {'text': 'Menú 2', 'color': Colors.orange.shade300},
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 100,
+                                  child: Text(
+                                    'Dirección',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 35,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.black87),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Row(
+                                      children: [
+                                        const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8.0,
+                                          ),
+                                          child: Icon(
+                                            Icons.map_outlined,
+                                            color: Colors.black,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: TextField(
+                                            controller: _addressController,
+                                            decoration: const InputDecoration(
+                                              border: InputBorder.none,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Divider(color: Colors.black, thickness: 1),
+
+                          _buildFormRow(
+                            'Instagram',
+                            _igController,
+                            hint: '@TuUsuario',
+                          ),
+                          _buildFormRow(
+                            'Facebook',
+                            _fbController,
+                            hint: '@TuUsuario',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // --- HORARIOS ---
+                          const Text(
+                            'Horario',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              // BOTONES REALES DE HORA
+                              Expanded(
+                                child: _buildTimePickerButton(
+                                  'Apertura',
+                                  _horaApertura,
+                                  true,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildTimePickerButton(
+                                  'Cierre',
+                                  _horaCierre,
+                                  false,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildDayButton(0, 'Lu'),
+                              _buildDayButton(1, 'Ma'),
+                              _buildDayButton(2, 'Mi'),
+                              _buildDayButton(3, 'Ju'),
+                              _buildDayButton(4, 'Vi'),
+                              _buildDayButton(5, 'Sa'),
+                              _buildDayButton(6, 'Do'),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Categoría
+                          const Text(
+                            'Categoría principal',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedCategory,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Colors.black,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Colors.black,
+                            ),
+                            items: _categorias.map((String categoria) {
+                              return DropdownMenuItem(
+                                value: categoria,
+                                child: Text(
+                                  categoria,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                if (newValue != null) {
+                                  _selectedCategory = newValue;
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Imágenes
+                          const Text(
+                            'Menú',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 160,
+                            child: EditableAutoCarousel(
+                              items: [
+                                {
+                                  'text': 'Menú 1',
+                                  'color': Colors.orange.shade200,
+                                },
+                                {
+                                  'text': 'Menú 2',
+                                  'color': Colors.orange.shade300,
+                                },
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          const Text(
+                            'Fotos del Restaurante',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 160,
+                            child: EditableAutoCarousel(
+                              items: [
+                                {
+                                  'text': 'Foto Fachada',
+                                  'color': Colors.blueGrey.shade200,
+                                },
+                                {
+                                  'text': 'Foto Interior',
+                                  'color': Colors.blueGrey.shade300,
+                                },
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Botón Guardar
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _guardarCambios,
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                side: const BorderSide(color: Colors.black87),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Guardar',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    const Text(
-                      'Fotos del Restaurante',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 160,
-                      child: EditableAutoCarousel(
-                        items: [
-                          {
-                            'text': 'Foto Fachada',
-                            'color': Colors.blueGrey.shade200,
-                          },
-                          {
-                            'text': 'Foto Interior',
-                            'color': Colors.blueGrey.shade300,
-                          },
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-
-                    // 7. Botón Guardar
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Colors.black87),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Guardar',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // --- FUNCIONES AYUDANTES --- //
+  // --- FUNCIONES AYUDANTES ---
 
   Widget _buildEditIconButton() {
     return Container(
@@ -342,7 +549,11 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     );
   }
 
-  Widget _buildFormRow(String label, String initialValue) {
+  Widget _buildFormRow(
+    String label,
+    TextEditingController controller, {
+    String hint = '',
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -356,16 +567,17 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
             ),
           ),
           Expanded(
-            child: TextFormField(
-              initialValue: initialValue,
+            child: TextField(
+              controller: controller,
               style: const TextStyle(fontSize: 16),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                hintText: hint,
                 isDense: true,
-                contentPadding: EdgeInsets.only(bottom: 4),
-                enabledBorder: UnderlineInputBorder(
+                contentPadding: const EdgeInsets.only(bottom: 4),
+                enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.black, width: 1),
                 ),
-                focusedBorder: UnderlineInputBorder(
+                focusedBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.black, width: 2),
                 ),
               ),
@@ -376,28 +588,45 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     );
   }
 
-  // Botón falso para Apertura y Cierre
-  Widget _buildFakeDropdown(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black87),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-          ),
-        ],
+  // --- EL BOTÓN DE HORA REAL ---
+  Widget _buildTimePickerButton(
+    String titulo,
+    TimeOfDay? horaGuardada,
+    bool esApertura,
+  ) {
+    // Convierte la hora a texto (ej. 8:00 AM) o muestra el título si está vacío
+    String textoAMostrar = horaGuardada != null
+        ? horaGuardada.format(context)
+        : titulo;
+
+    return InkWell(
+      onTap: () => _seleccionarHora(esApertura),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black87),
+          borderRadius: BorderRadius.circular(8),
+          color: horaGuardada != null
+              ? Colors.teal.shade50
+              : Colors.white, // Cambia de color si ya seleccionaste
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.access_time, color: Colors.black, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              textoAMostrar,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // Los botones de días cambian su estado en el array `selectedDays` automáticamente
   Widget _buildDayButton(int index, String text) {
     bool isSelected = selectedDays[index];
     return GestureDetector(
@@ -409,7 +638,9 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.grey.shade200 : Colors.white,
+          color: isSelected
+              ? Colors.teal.shade100
+              : Colors.white, // Color más vivo para los activos
           border: Border.all(color: Colors.black87),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -426,11 +657,10 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
 }
 
 // =======================================================
-// NUEVO WIDGET: Carrusel Editable con Alerta de Borrado
+// WIDGET: Carrusel Editable con Alerta de Borrado
 // =======================================================
 class EditableAutoCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> items;
-
   const EditableAutoCarousel({super.key, required this.items});
 
   @override
@@ -466,7 +696,6 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
     super.dispose();
   }
 
-  // Función para mostrar la alerta
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -485,9 +714,7 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Cierra la alerta sin hacer nada
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text(
                 'Cancelar',
                 style: TextStyle(
@@ -498,13 +725,10 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
             ),
             TextButton(
               onPressed: () {
-                // Aquí iría la lógica del back-end para borrar la foto
-                Navigator.pop(context); // Cierra la alerta
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Imagen borrada'),
-                  ), // Mensajito temporal abajo
-                );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Imagen borrada')));
               },
               child: const Text(
                 'Sí, borrar',
@@ -524,17 +748,12 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
   Widget build(BuildContext context) {
     return PageView.builder(
       controller: _pageController,
-      onPageChanged: (int page) {
-        setState(() {
-          _currentPage = page;
-        });
-      },
+      onPageChanged: (int page) => setState(() => _currentPage = page),
       itemCount: widget.items.length,
       itemBuilder: (context, index) {
         final item = widget.items[index];
         return Stack(
           children: [
-            // El fondo del carrusel (La imagen)
             Container(
               decoration: BoxDecoration(
                 color: item['color'],
@@ -550,8 +769,6 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
                 ),
               ),
             ),
-
-            // Botón Verde (+) para Agregar
             Positioned(
               top: 8,
               left: 8,
@@ -563,17 +780,11 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
                 child: IconButton(
                   icon: const Icon(Icons.add, color: Colors.black),
                   constraints: const BoxConstraints(),
-                  padding: const EdgeInsets.all(
-                    8,
-                  ), // Padding ajustado para que sea fácil de tocar
-                  onPressed: () {
-                    // Lógica para abrir galería y agregar imagen
-                  },
+                  padding: const EdgeInsets.all(8),
+                  onPressed: () {},
                 ),
               ),
             ),
-
-            // Botón Rojo (Basura) para Borrar
             Positioned(
               top: 8,
               right: 8,
@@ -586,11 +797,7 @@ class _EditableAutoCarouselState extends State<EditableAutoCarousel> {
                   icon: const Icon(Icons.delete_outline, color: Colors.black),
                   constraints: const BoxConstraints(),
                   padding: const EdgeInsets.all(8),
-                  onPressed: () {
-                    _showDeleteConfirmation(
-                      context,
-                    ); // Llama a la alerta de borrado
-                  },
+                  onPressed: () => _showDeleteConfirmation(context),
                 ),
               ),
             ),

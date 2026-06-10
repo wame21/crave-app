@@ -1,9 +1,11 @@
 import '../services/api_services.dart';
-import '../components/auto_carousel.dart';
 import '../components/restaurants_cards.dart';
 import '../components/custom_bottom_nav.dart';
 import 'search_screen.dart';
+import 'restaurant_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:async'; // Necesario para que el carrusel de vueltas
+import 'dart:math'; // Para sacar restaurantes aleatorios
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -84,10 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
 
                 // Banner Destacados (Llamamos a la pieza)
-                const Row(
+                Row(
+                  // <-- AQUÍ LE QUITÉ EL CONST PARA QUE YA NO MARQUE ERROR W
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       'Destacados\ndel día',
                       style: TextStyle(
                         fontSize: 18,
@@ -95,12 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 1.2,
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
                         height: 90,
-                        child:
-                            AutoCarouselDestacados(), // <-- Aquí está tu widget limpio
+                        child: AutoCarouselDestacados(
+                          restaurantes: _restaurantes,
+                        ), // <-- Pasamos los restaurantes
                       ),
                     ),
                   ],
@@ -127,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemBuilder: (context, index) {
                             final rest = _restaurantes[index];
                             return RestaurantCard(
-                              id: '2',
+                              id: rest['id_restaurant']?.toString() ?? '0',
                               name: rest['name'] ?? 'Sin nombre',
                               category: rest['food_type'] ?? 'Variado',
                               imageColor: Colors.teal.shade200,
@@ -143,6 +147,158 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
+    );
+  }
+}
+
+// =======================================================
+// WIDGET: Carrusel de Destacados para el Home
+// =======================================================
+class AutoCarouselDestacados extends StatefulWidget {
+  final List<dynamic> restaurantes;
+
+  const AutoCarouselDestacados({super.key, required this.restaurantes});
+
+  @override
+  State<AutoCarouselDestacados> createState() => _AutoCarouselDestacadosState();
+}
+
+class _AutoCarouselDestacadosState extends State<AutoCarouselDestacados> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  Timer? _timer;
+  List<Map<String, dynamic>> items = [];
+
+  // Colores para alternar
+  final List<Color> _colores = [
+    Colors.orange.shade200,
+    Colors.teal.shade200,
+    Colors.pink.shade200,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _prepararItems();
+
+    _timer = Timer.periodic(const Duration(seconds: 4), (Timer timer) {
+      if (items.isEmpty) return;
+
+      if (_currentPage < items.length - 1) {
+        _currentPage++;
+      } else {
+        _currentPage = 0;
+      }
+      if (_pageController.hasClients) {
+        _pageController.animateToPage(
+          _currentPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(AutoCarouselDestacados oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.restaurantes != oldWidget.restaurantes) {
+      setState(() {
+        _prepararItems();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _prepararItems() {
+    if (widget.restaurantes.isEmpty) {
+      items = [
+        {
+          'text': 'Explora la app',
+          'color': Colors.grey.shade300,
+          'id': null,
+          'name': null,
+        },
+      ];
+      return;
+    }
+
+    final random = Random();
+    List<dynamic> shuffled = List.from(widget.restaurantes)..shuffle(random);
+    int take = shuffled.length > 3 ? 3 : shuffled.length;
+
+    for (int i = 0; i < take; i++) {
+      final rest = shuffled[i];
+      final name = rest['name'] ?? 'Restaurante';
+      final id = rest['id_restaurant']?.toString();
+
+      String prompt = '';
+      if (i == 0) {
+        prompt = '¡Prueba $name!';
+      } else if (i == 1)
+        prompt = 'Te recomendamos $name';
+      else
+        prompt = 'Descubre $name';
+
+      items.add({
+        'text': prompt,
+        'color': _colores[i % _colores.length],
+        'id': id,
+        'name': name,
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty && widget.restaurantes.isNotEmpty) {
+      _prepararItems();
+    }
+
+    return PageView.builder(
+      controller: _pageController,
+      onPageChanged: (int page) => setState(() => _currentPage = page),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return GestureDetector(
+          onTap: () {
+            if (item['id'] != null && item['name'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RestaurantDetailScreen(
+                    restaurantId: item['id'],
+                    restaurantName: item['name'],
+                  ),
+                ),
+              );
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            decoration: BoxDecoration(
+              color: item['color'],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              item['text'],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

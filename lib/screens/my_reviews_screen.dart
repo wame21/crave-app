@@ -24,7 +24,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     final userId = await ApiService.obtenerUsuarioId();
     if (userId != null) {
       final perfil = await ApiService.obtenerPerfil(userId);
-      final resenas = await ApiService.obtenerResenasPropias(userId);
+      final resenas = await ApiService.obtenerMisResenas(userId);
 
       if (mounted) {
         setState(() {
@@ -172,7 +172,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                 ],
               ),
       ),
-      bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 4),
     );
   }
 

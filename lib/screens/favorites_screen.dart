@@ -26,7 +26,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       // Jalamos el perfil para el nombre y los favoritos al mismo tiempo
       final perfil = await ApiService.obtenerPerfil(userId);
       final favoritos = await ApiService.obtenerFavoritos(userId);
-
       if (mounted) {
         setState(() {
           _userName = perfil?['profile_name'] ?? 'Usuario';

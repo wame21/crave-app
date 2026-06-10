@@ -1,17 +1,97 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
+import '../services/api_services.dart';
 
 class CreateReviewScreen extends StatefulWidget {
-  const CreateReviewScreen({super.key});
+  final String restaurantId;
+  final String
+  restaurantName; // Añadimos esto para que la cabecera no diga Doña Licha w
+
+  const CreateReviewScreen({
+    super.key,
+    required this.restaurantId,
+    required this.restaurantName,
+  });
 
   @override
   State<CreateReviewScreen> createState() => _CreateReviewScreenState();
 }
 
 class _CreateReviewScreenState extends State<CreateReviewScreen> {
+  // Las estrellitas de tu diseño
   double _foodRating = 0.0;
   double _serviceRating = 0.0;
   double _ambienceRating = 0.0;
+
+  // El controlador para el campo de texto (¿Por qué?)
+  final TextEditingController _commentController = TextEditingController();
+
+  // Para mostrar que la app está pensando y evitar doble click
+  bool _isPublishing = false;
+
+  // --- LÓGICA PARA PUBLICAR EN SUPABASE ---
+  Future<void> _publicar() async {
+    // Si no le han puesto ninguna estrella, le avisamos
+    if (_foodRating == 0.0 && _serviceRating == 0.0 && _ambienceRating == 0.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ponle al menos una estrellita loco.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isPublishing = true);
+
+    final userId = await ApiService.obtenerUsuarioId();
+    if (userId == null) {
+      setState(() => _isPublishing = false);
+      return;
+    }
+
+    // Calculamos el promedio global juntando tus 3 categorías
+    double overallRating = (_foodRating + _serviceRating + _ambienceRating) / 3;
+
+    // Empaquetamos todo para mandarlo al servidor
+    final datos = {
+      'id_user': userId,
+      'id_restaurant': widget.restaurantId,
+      'rating_food': _foodRating.round(),
+      'rating_service': _serviceRating.round(),
+      'rating_atmosphere': _ambienceRating.round(),
+      'comment': _commentController.text.trim(),
+    };
+
+    final exito = await ApiService.crearResena(datos);
+
+    if (mounted) {
+      setState(() => _isPublishing = false);
+
+      if (exito) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Reseña publicada al cien!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context); // Te regresa a la pantalla del restaurante
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hubo un pedo al publicar w.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +130,9 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment
-                .stretch, // Estira los elementos para que el centrado funcione en toda la pantalla
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Cabecera del Restaurante (Esta se queda alineada normal)
+              // 1. Cabecera del Restaurante
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -75,68 +154,51 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'La cocina de Doña Licha',
-                          style: TextStyle(
+                          widget
+                              .restaurantName, // ¡Ya no es Doña Licha, es el nombre real!
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Mexicana',
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Evaluando...',
                           style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
                       ],
                     ),
                   ),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.yellow.shade700, size: 24),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '4.8',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               const SizedBox(height: 40),
 
-              // 2. Secciones de Calificación por Estrellas (¡AHORA CENTRADAS!)
+              // 2. Secciones de Calificación por Estrellas
               _buildStarRatingSection('Comida', _foodRating, (rating) {
-                setState(() {
-                  _foodRating = rating;
-                });
+                setState(() => _foodRating = rating);
               }),
               _buildStarRatingSection('Servicio', _serviceRating, (rating) {
-                setState(() {
-                  _serviceRating = rating;
-                });
+                setState(() => _serviceRating = rating);
               }),
               _buildStarRatingSection('Ambiente', _ambienceRating, (rating) {
-                setState(() {
-                  _ambienceRating = rating;
-                });
+                setState(() => _ambienceRating = rating);
               }),
 
               const SizedBox(height: 30),
 
-              // 3. Campo de Texto
+              // 3. Campo de Texto (¡CONECTADO AL CONTROLADOR!)
               const Center(
                 child: Text(
-                  '¿Por que?',
+                  '¿Por qué?',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
+                controller: _commentController, // <-- ESTO ATRAPA EL TEXTO
                 maxLines: 5,
                 decoration: InputDecoration(
                   hintText: 'Comparte tu opinion',
@@ -151,7 +213,7 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
               ),
               const SizedBox(height: 30),
 
-              // 4. Adjuntar Imágenes
+              // 4. Adjuntar Imágenes (Solo el botón de adorno por ahora)
               const Center(
                 child: Text(
                   'Fotografías',
@@ -159,8 +221,6 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Centramos también el botón de adjuntar
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -188,32 +248,42 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 40),
 
-              // 5. Botón Publicar reseña
+              // 5. Botón Publicar reseña (¡CONECTADO A LA BASE DE DATOS!)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isPublishing
+                      ? null
+                      : _publicar, // Si está cargando, lo bloquea
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: _isPublishing
+                        ? Colors.grey.shade300
+                        : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: Colors.black87),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'Publicar reseña',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isPublishing
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.black,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Publicar reseña',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -234,16 +304,12 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
-      // AQUI ES DONDE CENTRAMOS EL TEXTO Y LAS ESTRELLAS
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ), // Un poco menos grueso para igualar tu diseño
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           _buildInteractiveStarRow(currentRating, onRatingChanged),
@@ -256,7 +322,6 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
     double rating,
     Function(double) onRatingChanged,
   ) {
-    // AQUI CENTRAMOS LAS ESTRELLAS EN LA FILA
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {

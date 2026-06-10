@@ -1,26 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/home_screen.dart';
+import '../screens/search_screen.dart';
+import '../screens/favorites_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/restaurant_profile_screen.dart';
+import '../screens/genie_screen.dart'; // <-- Importamos Genio
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
 
   const CustomBottomNav({super.key, required this.currentIndex});
 
-  void _onItemTapped(BuildContext context, int index) {
-    // Si picamos el botón de la pantalla en la que ya estamos, no hacemos nada w
+  void _onItemTapped(BuildContext context, int index) async {
     if (index == currentIndex) return;
 
-    // Aquí después le vas a conectar tus pantallas reales
-    // Por ejemplo:
-    /*
     if (index == 0) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
-    } else if (index == 3) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RestaurantProfileScreen()));
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
     }
-    */
 
-    // Solo para que veas que sí funciona al picarle
-    print('DEBUG: Pícaste el botón $index w');
+    Widget nextScreen;
+    switch (index) {
+      case 1:
+        nextScreen = const SearchScreen();
+        break;
+      case 2:
+        nextScreen = const GenieScreen();
+        break;
+      case 3:
+        nextScreen = const FavoritesScreen();
+        break;
+      case 4:
+        final prefs = await SharedPreferences.getInstance();
+        final role = prefs.getString('user_role') ?? 'Client';
+
+        if (role == 'Restaurant_Owner') {
+          nextScreen = const RestaurantProfileScreen();
+        } else {
+          nextScreen = const ProfileScreen();
+        }
+        break;
+      default:
+        return;
+    }
+
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation1, animation2) => nextScreen,
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
   }
 
   @override
@@ -65,6 +102,17 @@ class CustomBottomNav extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Padding(
               padding: EdgeInsets.only(bottom: 4.0),
+              child: Icon(Icons.auto_awesome_outlined),
+            ),
+            activeIcon: Padding(
+              padding: EdgeInsets.only(bottom: 4.0),
+              child: Icon(Icons.auto_awesome),
+            ),
+            label: 'Genio',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.favorite_border),
             ),
             activeIcon: Padding(
@@ -89,3 +137,4 @@ class CustomBottomNav extends StatelessWidget {
     );
   }
 }
+

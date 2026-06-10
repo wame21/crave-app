@@ -1,12 +1,14 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../components/custom_bottom_nav.dart';
 import '../services/api_services.dart';
 import 'all_reviews_screen.dart';
 import 'create_review_screen.dart';
+import 'home_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
-  // Ahora la pantalla pide el ID y el Nombre para saber qué cargar
   final String restaurantId;
   final String restaurantName;
 
@@ -22,6 +24,7 @@ class RestaurantDetailScreen extends StatefulWidget {
 
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   String? _userId;
+  String _userRole = 'Client'; // Por defecto es cliente
   bool _isFavorite = false;
   bool _isLoading = true;
   List<dynamic> _resenas = [];
@@ -33,9 +36,12 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 
   Future<void> _cargarDatosRestaurante() async {
+    // 1. LEEMOS EL ROL REAL DE LA MEMORIA DEL CELULAR W
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('user_role') ?? 'Client';
+
     final userId = await ApiService.obtenerUsuarioId();
     if (userId != null) {
-      // Checamos si ya le habías dado like y traemos las reseñas
       final isFav = await ApiService.checarSiEsFavorito(
         userId,
         widget.restaurantId,
@@ -46,6 +52,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
 
       if (mounted) {
         setState(() {
+          _userRole = role; // <-- GUARDAMOS EL ROL PARA USARLO ABAJO
           _userId = userId;
           _isFavorite = isFav;
           _resenas = resenas;
@@ -60,27 +67,34 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   void _toggleFavorito() async {
     if (_userId == null) return;
 
-    // Cambiamos el color al instante para que se sienta rápido
     setState(() {
       _isFavorite = !_isFavorite;
     });
 
     bool exito = false;
     if (_isFavorite) {
+      // AQUÍ ESTÁ EL FIX: Le mandamos el _userId! y el widget.restaurantId
       exito = await ApiService.agregarFavorito(_userId!, widget.restaurantId);
     } else {
+      // AQUÍ TAMBIÉN: Le mandamos los dos datos
       exito = await ApiService.quitarFavorito(_userId!, widget.restaurantId);
     }
 
-    // Si falló la red, regresamos el botón a como estaba
     if (!exito && mounted) {
       setState(() {
-        _isFavorite = !_isFavorite;
+        _isFavorite = !_isFavorite; // Lo regresamos a como estaba si falla
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Error de conexión w, intenta de nuevo.'),
           backgroundColor: Colors.red.shade600,
+        ),
+      );
+    } else if (exito && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isFavorite ? 'Restaurante marcado como favorito' : 'Restaurante quitado de favoritos'),
+          backgroundColor: Colors.green.shade600,
         ),
       );
     }
@@ -99,7 +113,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Banner Superior (Imagen + Botones X y Corazón)
                     Stack(
                       children: [
                         Container(
@@ -136,7 +149,15 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                               ),
                               padding: const EdgeInsets.all(8),
                               constraints: const BoxConstraints(),
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const HomeScreen(),
+                                  ),
+                                  (Route<dynamic> route) => false,
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -153,7 +174,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                               ),
                             ),
                             child: IconButton(
-                              // AQUÍ ESTÁ LA MAGIA DEL CORAZÓN DINÁMICO
                               icon: Icon(
                                 _isFavorite
                                     ? Icons.favorite
@@ -174,7 +194,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 2. Cabecera
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -236,12 +255,22 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // 3. Botones Llamar y Cómo llegar
                           Row(
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    final Uri telUrl = Uri.parse('tel:1234567890');
+                                    if (await canLaunchUrl(telUrl)) {
+                                      await launchUrl(telUrl);
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('No se puede abrir el teléfono w.',), backgroundColor: Colors.red,),
+                                        );
+                                      }
+                                    }
+                                  },
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 14,
@@ -266,7 +295,34 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    final query = Uri.encodeComponent(
+                                      '${widget.restaurantName}, Guasave',
+                                    );
+                                    final url = Uri.parse(
+                                      'https://www.google.com/maps/search/?api=1&query=$query',
+                                    );
+
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(
+                                        url,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } else {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No se pudo abrir Maps w.',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 14,
@@ -305,14 +361,20 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                               Expanded(
                                 child: _buildInfoIconButton(
                                   Icons.camera_alt_outlined,
-                                  () {},
+                                  () async {
+                                    final Uri url = Uri.parse('https://instagram.com');
+                                    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _buildInfoIconButton(
                                   Icons.facebook,
-                                  () {},
+                                  () async {
+                                    final Uri url = Uri.parse('https://facebook.com');
+                                    if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -364,7 +426,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // LISTA DE RESEÑAS DINÁMICA
                           if (_resenas.isEmpty)
                             const Padding(
                               padding: EdgeInsets.only(bottom: 20),
@@ -424,39 +485,46 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // BOTÓN PARA CREAR RESEÑA
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                // OJO: Tendrás que actualizar CreateReviewScreen para que acepte restaurantId por parámetro igual que esta pantalla
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CreateReviewScreen(),
+                          // 2. ¡EL SEGURO CONTRA DUEÑOS Y LA CONEXIÓN AL NOMBRE!
+                          if (_userRole != 'Restaurant_Owner')
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CreateReviewScreen(
+                                        restaurantId: widget.restaurantId,
+                                        restaurantName: widget
+                                            .restaurantName, // <-- LISTO PARA LA ACCIÓN
+                                      ),
+                                    ),
+                                  ).then((_) {
+                                    // RECARGAMOS LA PANTALLA AL VOLVER
+                                    setState(() => _isLoading = true);
+                                    _cargarDatosRestaurante();
+                                  });
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
                                   ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                                  side: const BorderSide(color: Colors.black87),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-                                side: const BorderSide(color: Colors.black87),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                '¿Qué te pareció este restaurante?',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                                child: const Text(
+                                  '¿Qué te pareció este restaurante?',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                           const SizedBox(height: 20),
                         ],
                       ),
@@ -469,7 +537,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     );
   }
 
-  // --- FUNCIONES AYUDANTES (Se quedan igual) ---
   Widget _buildInfoIconButton(IconData icon, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -639,9 +706,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   }
 }
 
-// =======================================================
-// WIDGET: Carrusel Genérico Reutilizable
-// =======================================================
 class GenericAutoCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> items;
   const GenericAutoCarousel({super.key, required this.items});

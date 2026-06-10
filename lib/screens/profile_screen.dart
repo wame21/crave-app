@@ -160,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
       ),
 
       // La barra inferior seleccionando el índice 3 (Perfil)
-      bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 4),
     );
   }
 

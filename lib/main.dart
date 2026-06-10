@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
-import '../components/responsive_layout.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,9 +18,10 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
 
-      builder: (context, child) {
-        return ResponsiveLayout(child: child!);
-      },
+      //builder: (context, child){//
+      // Asegúrate de que responsive_layout.dart exista en lib/components/
+      //return ResponsiveLayout(child: child!);//
+      //  },//
       home: const LoginScreen(),
     );
   }
