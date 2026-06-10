@@ -1,115 +1,167 @@
 import 'package:flutter/material.dart';
+import '../models/review_model.dart';
+import '../models/restaurant_model.dart';
+import '../services/restaurant_service.dart';
+import '../services/review_service.dart';
 
-class AllReviewsScreen extends StatelessWidget {
-  const AllReviewsScreen({super.key});
+class AllReviewsScreen extends StatefulWidget {
+  final int restaurantId;
+  const AllReviewsScreen({super.key, required this.restaurantId});
+
+  @override
+  State<AllReviewsScreen> createState() => _AllReviewsScreenState();
+}
+
+class _AllReviewsScreenState extends State<AllReviewsScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  
+  RestaurantModel? _restaurant;
+  List<ReviewModel> _reviews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final restaurantFuture = RestaurantService.getRestaurant(widget.restaurantId);
+      final reviewsFuture = ReviewService.getRestaurantReviews(widget.restaurantId);
+
+      final results = await Future.wait([restaurantFuture, reviewsFuture]);
+
+      _restaurant = results[0] as RestaurantModel;
+      _reviews = results[1] as List<ReviewModel>;
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // Usamos un AppBar sencillo solo para la flecha de regresar
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Cabecera Central
-              Center(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Todas las reseñas de:',
-                      style: TextStyle(fontSize: 16, color: Colors.black87),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.black))
+            : _errorMessage != null || _restaurant == null
+                ? Center(child: Text(_errorMessage ?? 'Error al cargar reseñas'))
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Logo
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.teal.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.restaurant, color: Colors.teal, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'La cocina de Doña Licha',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                        ),
-                        const SizedBox(width: 12),
-                        // Estrella y Calificación
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.yellow.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
+                        // 1. Cabecera Central
+                        Center(
+                          child: Column(
                             children: [
-                              Icon(Icons.star, color: Colors.yellow.shade700, size: 20),
-                              const SizedBox(width: 4),
                               const Text(
-                                '4.8',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                'Todas las reseñas de:',
+                                style: TextStyle(fontSize: 16, color: Colors.black87),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Logo
+                                  Container(
+                                    width: 45,
+                                    height: 45,
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.shade100,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      _restaurant!.name.isNotEmpty ? _restaurant!.name[0].toUpperCase() : 'R',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.teal),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _restaurant!.name,
+                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Estrella y Calificación
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.yellow.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.star, color: Colors.yellow.shade700, size: 20),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _restaurant!.overallRating?.toStringAsFixed(1) ?? "0.0",
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
+                        const SizedBox(height: 30),
+
+                        // 2. Título de la sección
+                        const Text(
+                          'Reseñas',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // 3. Lista de Reseñas Detalladas
+                        if (_reviews.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Text('Este restaurante aún no tiene reseñas.', style: TextStyle(color: Colors.black54)),
+                            ),
+                          )
+                        else
+                          ..._reviews.map((review) => _buildDetailedReviewItem(
+                                userName: review.clientName ?? 'Usuario Anónimo',
+                                date: review.createdAt != null ? DateTime.parse(review.createdAt!).toLocal().toString().split(' ')[0] : '',
+                                reviewText: review.comment ?? '',
+                                avatarColor: Colors.blueGrey,
+                                hasImage: (review.photoGallery?.isNotEmpty ?? false),
+                                servicio: (review.ratingService ?? 5).toStringAsFixed(1),
+                                comida: (review.ratingFood ?? 5).toStringAsFixed(1),
+                                ambiente: (review.ratingAtmosphere ?? 5).toStringAsFixed(1),
+                              )),
+                        
+                        const SizedBox(height: 20),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // 2. Título de la sección
-              const Text(
-                'Reseñas',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              const SizedBox(height: 20),
-
-              // 3. Lista de Reseñas Detalladas
-              
-              // Reseña 1 (Con imagen)
-              _buildDetailedReviewItem(
-                userName: 'Melisa Perez',
-                date: '02/02/2067',
-                reviewText: 'Nombre loco que buenas las tortas y el servicio bien rapido como a mi me gusta, recomendado 10/10.',
-                avatarColor: Colors.blueGrey,
-                hasImage: true, // ¡Esta tiene foto!
-                servicio: '5.0',
-                comida: '5.0',
-                ambiente: '5.0',
-              ),
-
-              // Reseña 2 (Sin imagen)
-              _buildDetailedReviewItem(
-                userName: 'Pedro Sanchez',
-                date: '27/03/2067',
-                reviewText: 'Me gustaron mucho las tortas pero les pedi de favor que me las sirvieran sin cebolla loco, me dijieron que si y cuando me llego la tortona tenia cebolla loco estoy muy triste. Igual estaba buena la torta 10/10.',
-                avatarColor: Colors.yellow.shade600,
-                hasImage: false, // Esta no tiene foto
-                servicio: '5.0',
-                comida: '5.0',
-                ambiente: '5.0',
-              ),
-              
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+                  ),
       ),
     );
   }

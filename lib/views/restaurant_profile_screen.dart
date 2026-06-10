@@ -1,156 +1,181 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
 import 'login_screen.dart';
-import 'restaurant_detail_screen.dart'; // Para ir a ver su propio restaurante
+import 'restaurant_detail_screen.dart';
 import 'edit_restaurant_screen.dart';
+import '../models/restaurant_model.dart';
+import '../services/restaurant_service.dart';
+import '../services/auth_service.dart';
 
-class RestaurantProfileScreen extends StatelessWidget {
+class RestaurantProfileScreen extends StatefulWidget {
   const RestaurantProfileScreen({super.key});
+
+  @override
+  State<RestaurantProfileScreen> createState() => _RestaurantProfileScreenState();
+}
+
+class _RestaurantProfileScreenState extends State<RestaurantProfileScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  RestaurantModel? _restaurant;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurant();
+  }
+
+  Future<void> _loadRestaurant() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final restaurant = await RestaurantService.getMyRestaurant();
+      setState(() {
+        _restaurant = restaurant;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Sección Superior (Banner + Logo + Nombre)
-            Container(
-              color: Colors
-                  .grey
-                  .shade200, // El fondo gris clarito de abajo del banner
-              child: Column(
-                children: [
-                  // Stack para encimar el logo sobre el banner
-                  Stack(
-                    clipBehavior:
-                        Clip.none, // Permite que el logo se salga del stack
-                    alignment: Alignment.bottomCenter,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.black))
+            : _errorMessage != null && _restaurant == null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: _handleLogout,
+                          child: const Text('Cerrar sesión'),
+                        )
+                      ],
+                    ),
+                  )
+                : Column(
                     children: [
-                      // Banner del restaurante
+                      // 1. Sección Superior (Banner + Logo + Nombre)
                       Container(
-                        width: double.infinity,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors
-                              .pink
-                              .shade200, // Placeholder del banner de Doña Licha
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'Banner del Restaurante',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        color: Colors.grey.shade200, 
+                        child: Column(
+                          children: [
+                            // Stack para encimar el logo sobre el banner
+                            Stack(
+                              clipBehavior: Clip.none, 
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                // Banner del restaurante
+                                Container(
+                                  width: double.infinity,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.shade300, 
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: const Icon(Icons.restaurant_menu, size: 60, color: Colors.white54),
+                                ),
+                                // Logo circular encimado
+                                Positioned(
+                                  bottom: -50,
+                                  child: Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.teal.shade100,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 4,
+                                      ), 
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      _restaurant!.name.isNotEmpty ? _restaurant!.name[0].toUpperCase() : 'R',
+                                      style: const TextStyle(fontSize: 40, color: Colors.teal, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 60), 
+                            // Nombre del restaurante
+                            Text(
+                              _restaurant!.name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 20), 
+                          ],
                         ),
                       ),
-                      // Logo circular encimado (bajado 50 pixeles)
-                      Positioned(
-                        bottom: -50,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.teal.shade100,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 4,
-                            ), // Borde blanco para resaltar
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.restaurant,
-                            size: 50,
-                            color: Colors.teal,
+
+                      // 2. Sección Inferior (Botones sobre fondo blanco)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 30),
+
+                              // Botón: Mi Restaurante
+                              _buildProfileButton('Mi Restaurante', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RestaurantDetailScreen(restaurantId: _restaurant!.idRestaurant),
+                                  ),
+                                );
+                              }),
+                              const SizedBox(height: 16),
+
+                              // Botón: Editar Restaurante
+                              _buildProfileButton('Editar Restaurante', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const EditRestaurantScreen(),
+                                  ),
+                                ).then((_) => _loadRestaurant());
+                              }),
+                              const SizedBox(height: 40),
+
+                              // Botón: Cerrar Sesión (Destructivo)
+                              _buildProfileButton('Cerrar sesión', _handleLogout),
+                              const SizedBox(height: 20),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 60,
-                  ), // Espacio para que el logo no tape el texto
-                  // Nombre del restaurante
-                  const Text(
-                    'La cocina de Doña Licha',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ), // Espacio antes de terminar el fondo gris
-                ],
-              ),
-            ),
-
-            // 2. Sección Inferior (Botones sobre fondo blanco)
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 30),
-
-                    // Botón: Mi Restaurante
-                    _buildProfileButton('Mi Restaurante', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RestaurantDetailScreen(),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-
-                    // Botón: Editar Restaurante
-                    _buildProfileButton('Editar Restaurante', () {
-                      // Aquí irá la futura pantalla de editar restaurante
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EditRestaurantScreen(),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-
-                    // Botón: Mis Favoritos
-                    _buildProfileButton('Mis Favoritos', () {
-                      // Puedes reutilizar la pantalla de favorites_screen.dart si quieres
-                    }),
-                    const SizedBox(height: 16),
-
-                    // Botón: Reseñas Publicadas
-                    _buildProfileButton('Reseñas Publicadas', () {
-                      // Puedes reutilizar la pantalla de my_reviews_screen.dart
-                    }),
-                    const SizedBox(height: 40),
-
-                    // Botón: Cerrar Sesión (Destructivo)
-                    _buildProfileButton('Cerrar sesión', () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                        (Route<dynamic> route) => false,
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
-
-      // La barra inferior seleccionando el índice 3 (Perfil)
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
     );
   }

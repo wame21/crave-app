@@ -1,8 +1,78 @@
 import 'package:flutter/material.dart';
 import 'restaurant_profile_screen.dart';
+import '../services/auth_service.dart';
 
-class RestaurantRegistrationScreen extends StatelessWidget {
+class RestaurantRegistrationScreen extends StatefulWidget {
   const RestaurantRegistrationScreen({super.key});
+
+  @override
+  State<RestaurantRegistrationScreen> createState() => _RestaurantRegistrationScreenState();
+}
+
+class _RestaurantRegistrationScreenState extends State<RestaurantRegistrationScreen> {
+  final _ownerNameController = TextEditingController();
+  final _restaurantNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  String? _selectedCategory;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  final List<String> _categories = [
+    'Tacos', 'Pizza', 'Sushi', 'Hamburguesas', 'Café', 
+    'Alitas', 'Italiana', 'Mexicana', 'China', 'Mariscos'
+  ];
+
+  Future<void> _handleRegister() async {
+    final ownerName = _ownerNameController.text.trim();
+    final restaurantName = _restaurantNameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (ownerName.isEmpty || restaurantName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || _selectedCategory == null) {
+      setState(() => _errorMessage = 'Por favor, llena todos los campos');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      setState(() => _errorMessage = 'Las contraseñas no coinciden');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthService.registerOwner(ownerName, email, password, confirmPassword, restaurantName, _selectedCategory!);
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const RestaurantProfileScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ownerNameController.dispose();
+    _restaurantNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,11 +111,19 @@ class RestaurantRegistrationScreen extends StatelessWidget {
               const SizedBox(height: 40),
 
               const Text(
+                'Tu Nombre',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              _buildTextField('Juan Pérez', controller: _ownerNameController),
+              const SizedBox(height: 20),
+
+              const Text(
                 'Nombre del Restaurante',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('Restaurante'),
+              _buildTextField('Restaurante', controller: _restaurantNameController),
               const SizedBox(height: 20),
 
               const Text(
@@ -53,7 +131,7 @@ class RestaurantRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('correo@gmail.com'),
+              _buildTextField('correo@gmail.com', controller: _emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 20),
 
               const Text(
@@ -61,7 +139,7 @@ class RestaurantRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('********', isPassword: true),
+              _buildTextField('********', isPassword: true, controller: _passwordController),
               const SizedBox(height: 20),
 
               const Text(
@@ -69,7 +147,7 @@ class RestaurantRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('********', isPassword: true),
+              _buildTextField('********', isPassword: true, controller: _confirmPasswordController),
               const SizedBox(height: 20),
 
               // Menú desplegable para Categoría
@@ -79,6 +157,7 @@ class RestaurantRegistrationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
+                value: _selectedCategory,
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -98,7 +177,7 @@ class RestaurantRegistrationScreen extends StatelessWidget {
                   ),
                 ),
                 hint: const Text(
-                  'Tacos',
+                  'Selecciona una categoría',
                   style: TextStyle(color: Colors.black38),
                 ),
                 icon: const Icon(
@@ -106,41 +185,54 @@ class RestaurantRegistrationScreen extends StatelessWidget {
                   color: Colors.black,
                   size: 28,
                 ),
-                items: <String>['Tacos', 'Pizza', 'Sushi', 'Hamburguesas'].map((
-                  String value,
-                ) {
+                items: _categories.map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
                   );
                 }).toList(),
-                onChanged: (newValue) {},
-              ),
-              const SizedBox(height: 40),
-
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RestaurantProfileScreen(),
-                    ),
-                  );
+                onChanged: (newValue) {
+                  setState(() => _selectedCategory = newValue);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+              ),
+              const SizedBox(height: 20),
+
+              if (_errorMessage != null)
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
-                child: const Text(
-                  'Registrarme',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleRegister,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Registrarme',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -179,9 +271,11 @@ class RestaurantRegistrationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String hint, {bool isPassword = false}) {
+  Widget _buildTextField(String hint, {bool isPassword = false, required TextEditingController controller, TextInputType? keyboardType}) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.black38),
@@ -205,3 +299,4 @@ class RestaurantRegistrationScreen extends StatelessWidget {
     );
   }
 }
+

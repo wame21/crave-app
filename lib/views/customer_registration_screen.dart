@@ -1,8 +1,67 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import '../services/auth_service.dart';
 
-class CustomerRegistrationScreen extends StatelessWidget {
+class CustomerRegistrationScreen extends StatefulWidget {
   const CustomerRegistrationScreen({super.key});
+
+  @override
+  State<CustomerRegistrationScreen> createState() => _CustomerRegistrationScreenState();
+}
+
+class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      setState(() => _errorMessage = 'Por favor, llena todos los campos');
+      return;
+    }
+
+    if (password != confirmPassword) {
+      setState(() => _errorMessage = 'Las contraseñas no coinciden');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await AuthService.registerClient(name, email, password, confirmPassword);
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +105,7 @@ class CustomerRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('Nombre'),
+              _buildTextField('Nombre', controller: _nameController),
               const SizedBox(height: 20),
 
               // Campo: Correo
@@ -55,7 +114,7 @@ class CustomerRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('correo@gmail.com'),
+              _buildTextField('correo@gmail.com', controller: _emailController, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 20),
 
               // Campo: Contraseña
@@ -64,7 +123,7 @@ class CustomerRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('********', isPassword: true),
+              _buildTextField('********', isPassword: true, controller: _passwordController),
               const SizedBox(height: 20),
 
               // Campo: Confirmar contraseña
@@ -73,31 +132,46 @@ class CustomerRegistrationScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _buildTextField('********', isPassword: true),
-              const SizedBox(height: 40),
+              _buildTextField('********', isPassword: true, controller: _confirmPasswordController),
+              const SizedBox(height: 20),
+
+              if (_errorMessage != null)
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+
+              const SizedBox(height: 20),
 
               // Botón Registrarme
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleRegister,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Registrarme',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Registrarme',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -138,9 +212,11 @@ class CustomerRegistrationScreen extends StatelessWidget {
   }
 
   // Función de ayuda para no repetir tanto código en los TextFields
-  Widget _buildTextField(String hint, {bool isPassword = false}) {
+  Widget _buildTextField(String hint, {bool isPassword = false, required TextEditingController controller, TextInputType? keyboardType}) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.black38),
@@ -164,3 +240,4 @@ class CustomerRegistrationScreen extends StatelessWidget {
     );
   }
 }
+

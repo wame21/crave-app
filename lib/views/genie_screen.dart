@@ -1,8 +1,85 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
+import '../services/genie_service.dart';
+import '../models/restaurant_model.dart';
+import 'restaurant_detail_screen.dart';
 
-class GenieScreen extends StatelessWidget {
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  final List<RestaurantModel>? suggestions;
+
+  ChatMessage({required this.text, required this.isUser, this.suggestions});
+}
+
+class GenieScreen extends StatefulWidget {
   const GenieScreen({super.key});
+
+  @override
+  State<GenieScreen> createState() => _GenieScreenState();
+}
+
+class _GenieScreenState extends State<GenieScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final List<ChatMessage> _messages = [
+    ChatMessage(text: '¿Que se te antoja\nhoy?', isUser: false),
+  ];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add(ChatMessage(text: text, isUser: true));
+      _isLoading = true;
+    });
+    _controller.clear();
+    _scrollToBottom();
+
+    try {
+      final response = await GenieService.chat(text);
+      setState(() {
+        _messages.add(ChatMessage(
+          text: response.reply,
+          isUser: false,
+          suggestions: response.restaurantSuggestions,
+        ));
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add(ChatMessage(
+          text: 'Error: ${e.toString().replaceAll('Exception: ', '')}',
+          isUser: false,
+        ));
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,41 +93,30 @@ class GenieScreen extends StatelessWidget {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 22),
         ),
         centerTitle: true,
-        automaticallyImplyLeading: false, // Quita la flecha de regreso por defecto
+        automaticallyImplyLeading: false, 
       ),
       body: SafeArea(
         child: Column(
           children: [
             // Área donde aparecerán los mensajes del chat
             Expanded(
-              child: ListView(
+              child: ListView.builder(
+                controller: _scrollController,
                 padding: const EdgeInsets.all(16.0),
-                children: [
-                  // Burbuja de chat del Genio
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
-                          bottomLeft: Radius.circular(2), // El "pico" de la burbuja
-                        ),
-                      ),
-                      child: const Text(
-                        '¿Que se te antoja\nhoy?',
-                        style: TextStyle(fontSize: 16, color: Colors.black87),
-                      ),
-                    ),
-                  ),
-                ],
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  final message = _messages[index];
+                  return _buildMessageBubble(message);
+                },
               ),
             ),
             
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Center(child: CircularProgressIndicator(color: Colors.black)),
+              ),
+
             // Caja de Input interactiva en la parte inferior
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -62,15 +128,17 @@ class GenieScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     // Campo para escribir
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
                         hintText: '....',
                         hintStyle: TextStyle(color: Colors.black38),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                      maxLines: 3, // Permite que la caja crezca si escriben mucho
+                      maxLines: 3, 
                       minLines: 1,
+                      onSubmitted: (_) => _sendMessage(),
                     ),
                     // Fila de herramientas e ícono de enviar
                     Padding(
@@ -80,13 +148,12 @@ class GenieScreen extends StatelessWidget {
                           IconButton(
                             icon: const Icon(Icons.image_outlined, color: Colors.black87),
                             onPressed: () {},
-                          
                           ),
                           IconButton(
                             icon: const Icon(Icons.mic_none, color: Colors.black87),
                             onPressed: () {},
                           ),
-                          const Spacer(), // Empuja el botón de enviar hacia la derecha
+                          const Spacer(), 
                           // Botón circular de enviar
                           Container(
                             decoration: BoxDecoration(
@@ -95,7 +162,7 @@ class GenieScreen extends StatelessWidget {
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.arrow_upward, color: Colors.black45),
-                              onPressed: () {},
+                              onPressed: _isLoading ? null : _sendMessage,
                             ),
                           ),
                         ],
@@ -108,8 +175,95 @@ class GenieScreen extends StatelessWidget {
           ],
         ),
       ),
-      // Mantenemos la barra de navegación sincronizada en el índice 2
       bottomNavigationBar: const CustomBottomNav(currentIndex: 2), 
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage message) {
+    return Column(
+      crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            decoration: BoxDecoration(
+              color: message.isUser ? Colors.teal.shade100 : Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(12),
+                topRight: const Radius.circular(12),
+                bottomLeft: message.isUser ? const Radius.circular(12) : const Radius.circular(2),
+                bottomRight: message.isUser ? const Radius.circular(2) : const Radius.circular(12),
+              ),
+            ),
+            child: Text(
+              message.text,
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+          ),
+        ),
+        if (message.suggestions != null && message.suggestions!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+            child: SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: message.suggestions!.length,
+                itemBuilder: (context, i) {
+                  final suggestion = message.suggestions![i];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RestaurantDetailScreen(restaurantId: suggestion.idRestaurant),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 140,
+                      margin: const EdgeInsets.only(right: 12.0),
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.shade50,
+                        border: Border.all(color: Colors.teal.shade200),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.restaurant, color: Colors.teal),
+                          const SizedBox(height: 8),
+                          Text(
+                            suggestion.name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          if (suggestion.overallRating != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.star, size: 14, color: Colors.yellow.shade700),
+                                const SizedBox(width: 2),
+                                Text(suggestion.overallRating!.toStringAsFixed(1), style: const TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          ]
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

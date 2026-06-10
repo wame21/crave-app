@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'views/home_screen.dart';
 import 'views/login_screen.dart';
-import 'components/responsive_layout.dart'; 
+import 'components/responsive_layout.dart';
+import 'services/auth_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final bool isLoggedIn = await AuthService.isLoggedIn();
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -17,20 +22,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white, // Aseguramos que el fondo sea blanco
+        scaffoldBackgroundColor: Colors.white,
       ),
-      
-      // AQUÍ ESTÁ LA MAGIA GLOBAL:
-      // El 'builder' intercepta cualquier pantalla antes de dibujarla 
-      // y la mete a fuerza en nuestro ResponsiveLayout.
       builder: (context, child) {
         return ResponsiveLayout(
-          child: child!, // 'child' es la pantalla en la que estés en ese momento
+          child: child!,
         );
       },
-      
-      // Ya puedes poner tu HomeScreen normalito aquí
-      home: const LoginScreen(),
+      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

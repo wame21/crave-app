@@ -3,104 +3,162 @@ import '../components/custom_bottom_nav.dart';
 import 'edit_profile_screen.dart';
 import 'favorites_screen.dart';
 import 'my_reviews_screen.dart';
-import 'login_screen.dart'; // Importamos la pantalla de Login
+import 'login_screen.dart';
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../models/user_model.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  UserModel? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final profile = await UserService.getMyProfile();
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false, 
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Sección Superior (Fondo gris clarito)
-            Container(
-              width: double.infinity, 
-              color: Colors.grey.shade200, 
-              padding: const EdgeInsets.only(top: 60, bottom: 30),
-              child: Column(
-                children: [
-                  // Foto de perfil
-                  Container(
-                    width: 130,
-                    height: 130,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 2),
-                      color: Colors.yellow.shade200, 
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.black))
+            : _errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Error: $_errorMessage', style: const TextStyle(color: Colors.red)),
+                        TextButton(
+                          onPressed: _handleLogout,
+                          child: const Text('Cerrar sesión y salir'),
+                        )
+                      ],
                     ),
-                    child: const Icon(Icons.person, size: 80, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Nombre del usuario
-                  const Text(
-                    'Pedro Sanchez',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Sección Inferior (Botones sobre fondo blanco)
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
-                    
-                    // Botones de opciones
-                    _buildProfileButton('Editar Perfil', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    
-                    _buildProfileButton('Mis Favoritos', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const FavoritesScreen()),
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    
-                    _buildProfileButton('Reseñas Publicadas', () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const MyReviewsScreen()),
-                      );
-                    }),
-                    const SizedBox(height: 40), // Un espacio un poco más grande para separar el logout
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Sección Superior (Fondo gris clarito)
+                      Container(
+                        width: double.infinity, 
+                        color: Colors.grey.shade200, 
+                        padding: const EdgeInsets.only(top: 60, bottom: 30),
+                        child: Column(
+                          children: [
+                            // Foto de perfil
+                            Container(
+                              width: 130,
+                              height: 130,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.black, width: 2),
+                                color: Colors.yellow.shade200, 
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _profile?.profileName?.isNotEmpty == true ? _profile!.profileName![0].toUpperCase() : 'U',
+                                style: const TextStyle(fontSize: 60, color: Colors.black54, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // Nombre del usuario
+                            Text(
+                              _profile?.profileName ?? 'Usuario',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Sección Inferior (Botones sobre fondo blanco)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 40),
+                              
+                              // Botones de opciones
+                              _buildProfileButton('Editar Perfil', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                                ).then((_) => _loadProfile()); // Recargar si editó
+                              }),
+                              const SizedBox(height: 16),
+                              
+                              _buildProfileButton('Mis Favoritos', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                                );
+                              }),
+                              const SizedBox(height: 16),
+                              
+                              _buildProfileButton('Reseñas Publicadas', () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const MyReviewsScreen()),
+                                );
+                              }),
+                              const SizedBox(height: 40), 
 
-                    // Botón de Cerrar Sesión
-                    _buildProfileButton('Cerrar sesión', () {
-                      // pushAndRemoveUntil borra el historial de navegación para que no puedan regresar con la flecha de atrás
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        (Route<dynamic> route) => false, 
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+                              // Botón de Cerrar Sesión
+                              _buildProfileButton('Cerrar sesión', _handleLogout),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
       ),
-      
-      // La barra inferior seleccionando el índice 3 (Perfil)
       bottomNavigationBar: const CustomBottomNav(currentIndex: 3),
     );
   }
@@ -115,7 +173,6 @@ class ProfileScreen extends StatelessWidget {
           backgroundColor: Colors.white, 
           padding: const EdgeInsets.symmetric(vertical: 16),
           side: BorderSide(
-            // Si el botón es de cerrar sesión, lo pintamos de rojo para que resalte
             color: text == 'Cerrar sesión' ? Colors.red.shade400 : Colors.black87,
             width: text == 'Cerrar sesión' ? 1.5 : 1.0,
           ),
@@ -126,7 +183,6 @@ class ProfileScreen extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            // El texto también rojo si es cerrar sesión
             color: text == 'Cerrar sesión' ? Colors.red.shade400 : Colors.black,
             fontSize: 16,
             fontWeight: text == 'Cerrar sesión' ? FontWeight.bold : FontWeight.w500,
