@@ -6,7 +6,8 @@ import '../models/restaurant_model.dart';
 import 'restaurant_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialCategory; 
+  const SearchScreen({super.key, this.initialCategory});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -24,6 +25,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedCategory = widget.initialCategory;
     _performSearch();
   }
 

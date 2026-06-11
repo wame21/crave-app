@@ -5,6 +5,7 @@ import 'search_screen.dart';
 import 'restaurant_detail_screen.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant_model.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -118,7 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      // Navigate to favorites screen? Currently not connected here in original UI
+                      // Modifica esto para navegar a FavoritesScreen:
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                      );
                     },
                     icon: const Icon(Icons.favorite_border, color: Colors.black),
                     label: const Text(
@@ -232,23 +237,34 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryItem(IconData icon, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 20.0),
-      child: Column(
-        children: [
-          Container(
-            width: 65,
-            height: 65,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.black87, width: 2.5), 
-              color: Colors.white,
-            ),
-            child: Icon(icon, size: 32, color: Colors.black),
+    return GestureDetector(
+      onTap: () {
+        // Al hacer tap, navega a SearchScreen pasando el label de la categoría:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SearchScreen(initialCategory: label),
           ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        ],
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 20.0),
+        child: Column(
+          children: [
+            Container(
+              width: 65,
+              height: 65,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black87, width: 2.5), 
+                color: Colors.white,
+              ),
+              child: Icon(icon, size: 32, color: Colors.black),
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
+        ),
       ),
     );
   }
