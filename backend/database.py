@@ -1,199 +1,141 @@
 """
-Cliente HTTP para Supabase usando la REST API directamente con httpx.
-Esto nos permite usar cualquier tipo de API key (service key, anon key, etc.)
-sin las restricciones de validación de la librería supabase-py.
+Capa de acceso a datos: PostgreSQL con psycopg 3 y un pool de conexiones.
+
+No hay un cliente de BD global para los routers: cada request recibe su propia
+conexión mediante la dependencia `DbConn` (que usa `get_db()`), y los
+repositorios la reciben como parámetro. En las pruebas se sustituye con
+`app.dependency_overrides[get_db]`.
+
+Los errores de psycopg se propagan tal cual: traducirlos a HTTP es tarea de
+los repositorios y de `core/errors.py`.
+
+Uso en un router:
+
+    from database import DbConn, fetch_all
+
+    @router.get("/")
+    def listar(db: DbConn):
+        return fetch_all(db, "SELECT * FROM catalog.restaurants WHERE is_active = %s", (True,))
 """
-import httpx
-from config import SUPABASE_URL, SUPABASE_KEY
+import threading
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
+from typing import Annotated, Any
 
-# Base URL para la REST API de Supabase (PostgREST)
-SUPABASE_REST_URL = f"{SUPABASE_URL}/rest/v1"
+from fastapi import Depends, FastAPI
+from psycopg import Connection
+from psycopg.abc import Params, QueryNoTemplate
+from psycopg.rows import DictRow, dict_row
+from psycopg_pool import ConnectionPool
 
-# Headers comunes para todas las peticiones
-BASE_HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=representation",
-}
+from config import DATABASE_URL
+
+POOL_MIN_SIZE = 1
+POOL_MAX_SIZE = 10
+# Segundos que un request espera una conexión libre antes de PoolTimeout.
+POOL_TIMEOUT = 10.0
+
+_DictPool = ConnectionPool[Connection[DictRow]]
+
+_pool: _DictPool | None = None
+_pool_lock = threading.Lock()
 
 
-class SupabaseClient:
+def _get_pool() -> _DictPool:
+    """Devuelve el pool del proceso; lo crea en el primer uso."""
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            _pool = ConnectionPool(
+                DATABASE_URL,
+                connection_class=Connection[DictRow],
+                kwargs={"row_factory": dict_row},
+                min_size=POOL_MIN_SIZE,
+                max_size=POOL_MAX_SIZE,
+                timeout=POOL_TIMEOUT,
+                # Descarta conexiones muertas (p. ej. tras reiniciar el contenedor).
+                check=_DictPool.check_connection,
+                open=True,
+            )
+        return _pool
+
+
+def open_pool() -> None:
     """
-    Cliente simplificado para la API REST de Supabase.
-    Soporta operaciones CRUD sobre cualquier tabla.
+    Abre el pool y espera a que la BD responda.
+
+    Lanza `psycopg_pool.PoolTimeout` si no hay conexión en `POOL_TIMEOUT`
+    segundos, para que la app falle al arrancar y no en el primer request.
     """
-
-    def __init__(self):
-        self.base_url = SUPABASE_REST_URL
-        self.headers = BASE_HEADERS.copy()
-        self._client = httpx.Client(timeout=30.0)
-
-    def table(self, table_name: str) -> "TableQuery":
-        return TableQuery(self._client, self.base_url, self.headers, table_name)
+    _get_pool().wait(timeout=POOL_TIMEOUT)
 
 
-class TableQuery:
-    """Builder de queries para una tabla específica."""
-
-    def __init__(self, client: httpx.Client, base_url: str, headers: dict, table: str):
-        self._client = client
-        self._base_url = base_url
-        self._headers = headers.copy()
-        self._table = table
-        self._params: dict = {}
-        self._order_params: list = []
-        self._range_start: int | None = None
-        self._range_end: int | None = None
-        self._select_cols = "*"
-        self._single = False
-
-    def select(self, columns: str = "*") -> "TableQuery":
-        self._select_cols = columns
-        return self
-
-    def eq(self, column: str, value) -> "TableQuery":
-        self._params[column] = f"eq.{value}"
-        return self
-
-    def neq(self, column: str, value) -> "TableQuery":
-        self._params[column] = f"neq.{value}"
-        return self
-
-    def ilike(self, column: str, pattern: str) -> "TableQuery":
-        self._params[column] = f"ilike.{pattern}"
-        return self
-
-    def order(self, column: str, desc: bool = False) -> "TableQuery":
-        direction = "desc" if desc else "asc"
-        self._order_params.append(f"{column}.{direction}")
-        return self
-
-    def limit(self, count: int) -> "TableQuery":
-        self._range_end = count - 1
-        self._range_start = 0
-        return self
-
-    def range(self, start: int, end: int) -> "TableQuery":
-        self._range_start = start
-        self._range_end = end
-        return self
-
-    def single(self) -> "TableQuery":
-        self._single = True
-        self._headers["Accept"] = "application/vnd.pgrst.object+json"
-        return self
-
-    def _build_params(self) -> dict:
-        params = {"select": self._select_cols}
-        params.update(self._params)
-        if self._order_params:
-            params["order"] = ",".join(self._order_params)
-        return params
-
-    def _build_headers(self) -> dict:
-        h = self._headers.copy()
-        if self._range_start is not None and self._range_end is not None:
-            h["Range"] = f"{self._range_start}-{self._range_end}"
-            h["Range-Unit"] = "items"
-        return h
-
-    def execute(self) -> "QueryResult":
-        """Ejecuta SELECT."""
-        url = f"{self._base_url}/{self._table}"
-        response = self._client.get(
-            url, headers=self._build_headers(), params=self._build_params()
-        )
-        return _handle_response(response, self._single)
-
-    def insert(self, data: dict | list) -> "TableQuery":
-        """Prepara un INSERT."""
-        self._insert_data = data
-        self._operation = "insert"
-        return _InsertQuery(self._client, self._base_url, self._headers, self._table, data)
-
-    def update(self, data: dict) -> "TableQuery":
-        """Prepara un UPDATE."""
-        return _UpdateQuery(self._client, self._base_url, self._headers, self._table, data, self._params)
-
-    def delete(self) -> "TableQuery":
-        """Prepara un DELETE."""
-        return _DeleteQuery(self._client, self._base_url, self._headers, self._table, self._params)
+def close_pool() -> None:
+    """Cierra el pool y sus conexiones. Es idempotente."""
+    global _pool
+    with _pool_lock:
+        if _pool is not None:
+            _pool.close()
+            _pool = None
 
 
-class _InsertQuery:
-    def __init__(self, client, base_url, headers, table, data):
-        self._client = client
-        self._base_url = base_url
-        self._headers = headers.copy()
-        self._table = table
-        self._data = data
-
-    def execute(self) -> "QueryResult":
-        url = f"{self._base_url}/{self._table}"
-        response = self._client.post(url, headers=self._headers, json=self._data)
-        return _handle_response(response)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Ciclo de vida del pool junto al de la app: `FastAPI(lifespan=lifespan)`."""
+    open_pool()
+    try:
+        yield
+    finally:
+        close_pool()
 
 
-class _UpdateQuery:
-    def __init__(self, client, base_url, headers, table, data, params):
-        self._client = client
-        self._base_url = base_url
-        self._headers = headers.copy()
-        self._table = table
-        self._data = data
-        self._params = params
+def get_db() -> Iterator[Connection[DictRow]]:
+    """
+    Presta una conexión del pool durante un request, dentro de una transacción.
 
-    def eq(self, column: str, value) -> "_UpdateQuery":
-        self._params[column] = f"eq.{value}"
-        return self
+    Si el endpoint termina bien hace commit; si lanza cualquier excepción
+    (incluida `HTTPException`) hace rollback. En ambos casos devuelve la
+    conexión al pool. Las filas se leen como `dict`.
 
-    def execute(self) -> "QueryResult":
-        url = f"{self._base_url}/{self._table}"
-        response = self._client.patch(url, headers=self._headers, params=self._params, json=self._data)
-        return _handle_response(response)
+    Úsala a través de `DbConn` y no con `Depends(get_db)`: ver `DbConn`.
+    """
+    with _get_pool().connection() as conn:
+        yield conn
 
 
-class _DeleteQuery:
-    def __init__(self, client, base_url, headers, table, params):
-        self._client = client
-        self._base_url = base_url
-        self._headers = headers.copy()
-        self._table = table
-        self._params = params
+DbConn = Annotated[Connection[DictRow], Depends(get_db, scope="function")]
+"""
+Dependencia de FastAPI con la conexión del request.
 
-    def eq(self, column: str, value) -> "_DeleteQuery":
-        self._params[column] = f"eq.{value}"
-        return self
-
-    def execute(self) -> "QueryResult":
-        url = f"{self._base_url}/{self._table}"
-        response = self._client.delete(url, headers=self._headers, params=self._params)
-        return _handle_response(response)
+`scope="function"` hace el commit antes de enviar la respuesta: un cliente que
+recibe 201 y consulta enseguida ya ve lo que escribió. Todas las dependencias
+que declaren `DbConn` en el mismo request comparten la misma conexión; no la
+mezcles con `Depends(get_db)`, porque FastAPI la cachea aparte y abriría una
+segunda conexión con otra transacción.
+"""
 
 
-class QueryResult:
-    """Encapsula la respuesta de Supabase."""
-    def __init__(self, data, error=None):
-        self.data = data
-        self.error = error
+def fetch_one(conn: Connection[Any], query: QueryNoTemplate, params: Params | None = None) -> DictRow | None:
+    """
+    Ejecuta `query` y devuelve la primera fila como `dict`, o `None` si no hay filas.
+
+    Los valores van siempre en `params` (`%s` o `%(nombre)s`), nunca interpolados
+    en `query`. Sirve también para `INSERT/UPDATE ... RETURNING`.
+    """
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(query, params)
+        return cur.fetchone()
 
 
-def _handle_response(response: httpx.Response, single: bool = False) -> QueryResult:
-    """Procesa la respuesta HTTP de Supabase y lanza excepciones claras en caso de error."""
-    if response.status_code >= 400:
-        try:
-            error_detail = response.json()
-        except Exception:
-            error_detail = response.text
-        raise Exception(f"Supabase error {response.status_code}: {error_detail}")
-
-    if not response.content:
-        return QueryResult(data=[] if not single else None)
-
-    data = response.json()
-    return QueryResult(data=data)
+def fetch_all(conn: Connection[Any], query: QueryNoTemplate, params: Params | None = None) -> list[DictRow]:
+    """Ejecuta `query` y devuelve todas las filas como lista de `dict` (vacía si no hay)."""
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(query, params)
+        return cur.fetchall()
 
 
-# Instancia global del cliente
-supabase = SupabaseClient()
+def execute(conn: Connection[Any], query: QueryNoTemplate, params: Params | None = None) -> int:
+    """Ejecuta una sentencia sin resultado (INSERT, UPDATE, DELETE) y devuelve las filas afectadas."""
+    with conn.cursor() as cur:
+        cur.execute(query, params)
+        return cur.rowcount
