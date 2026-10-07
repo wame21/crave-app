@@ -82,7 +82,7 @@ Las demás variables (`DATABASE_URL`, `CORS_ORIGINS`, `GEMINI_API_KEY`, …) est
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-> **Estado actual:** la API se está reescribiendo como servicios bajo `/api/v1` (Ola 2, issues [#20](https://github.com/wame21/crave-app/issues/20)–[#24](https://github.com/wame21/crave-app/issues/24)). Por ahora solo responden `/` y `/health`: el código de `backend/routers/` es de la versión anterior y no se monta. Por eso la app Flutter todavía no puede iniciar sesión; se alineará con `/api/v1` en [#26](https://github.com/wame21/crave-app/issues/26).
+> **Estado actual:** la API ya está dividida en servicios bajo `/api/v1` (Identity, Catalog, Reviews, Favorites y Genie; ver [backend/README.md](backend/README.md)). La app Flutter todavía llama a las rutas anteriores (`/api/...`) y se alineará con `/api/v1` en [#26](https://github.com/wame21/crave-app/issues/26).
 
 ## 3. App (Flutter)
 
