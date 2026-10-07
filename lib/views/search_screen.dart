@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../components/custom_bottom_nav.dart';
 import '../services/restaurant_service.dart';
+import '../di.dart';
 import '../models/restaurant_model.dart';
 import 'restaurant_detail_screen.dart';
 
@@ -61,7 +62,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      final results = await RestaurantService.listRestaurants(
+      final results = await getIt<RestaurantService>().listRestaurants(
         query: _searchController.text.trim(),
         category: _selectedCategory,
       );
