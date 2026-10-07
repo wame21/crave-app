@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                (_profile?.profileName.isNotEmpty ?? false) ? _profile!.profileName[0].toUpperCase() : 'U',
+                                _profile?.profileName?.isNotEmpty == true ? _profile!.profileName![0].toUpperCase() : 'U',
                                 style: const TextStyle(fontSize: 60, color: Colors.black54, fontWeight: FontWeight.bold),
                               ),
                             ),

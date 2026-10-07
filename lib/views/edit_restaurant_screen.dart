@@ -89,10 +89,10 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     });
 
     try {
-      final sm = {
+      final sm = jsonEncode({
         'instagram': _instagramController.text.trim(),
         'facebook': _facebookController.text.trim(),
-      };
+      });
 
       await getIt<RestaurantService>().updateRestaurant(_restaurant!.idRestaurant, {
         'name': name,
@@ -263,7 +263,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
                     const Text('Categoría principal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedCategory,
+                      value: _selectedCategory,
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(

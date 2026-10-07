@@ -5,8 +5,9 @@ import 'all_reviews_screen.dart';
 import 'create_review_screen.dart';
 import '../models/restaurant_model.dart';
 import '../models/review_model.dart';
-import '../services/auth_service.dart';
+import '../models/favorite_model.dart';
 import '../services/restaurant_service.dart';
+import '../services/review_service.dart';
 import '../services/favorites_service.dart';
 import '../di.dart';
 
@@ -39,34 +40,26 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     });
 
     try {
-      // Una sola llamada al BFF trae el restaurante, sus reseñas y si es favorito.
-      final screen = await getIt<RestaurantService>().getRestaurantScreen(widget.restaurantId);
-      // Si el BFF no pudo consultar el favorito, se pregunta directamente.
-      final isFavorite = screen.isFavorite ?? await _fetchIsFavorite();
+      final restaurantFuture = getIt<RestaurantService>().getRestaurant(widget.restaurantId);
+      final reviewsFuture = getIt<ReviewService>().getRestaurantReviews(widget.restaurantId);
+      final favoritesFuture = getIt<FavoritesService>().getMyFavorites();
+
+      final results = await Future.wait([restaurantFuture, reviewsFuture, favoritesFuture]);
+
+      _restaurant = results[0] as RestaurantModel;
+      _reviews = results[1] as List<ReviewModel>;
+      final favorites = results[2] as List<FavoriteModel>;
+
+      _isFavorite = favorites.any((f) => f.idRestaurant == widget.restaurantId);
 
       setState(() {
-        _restaurant = screen.restaurant;
-        _reviews = screen.reviews?.items ?? [];
-        _isFavorite = isFavorite;
         _isLoading = false;
       });
-      if (screen.warnings.isNotEmpty && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(screen.warnings.join('\n'))));
-      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
         _isLoading = false;
       });
-    }
-  }
-
-  Future<bool> _fetchIsFavorite() async {
-    if (!await getIt<AuthService>().isLoggedIn()) return false;
-    try {
-      return await getIt<FavoritesService>().isFavorite(widget.restaurantId);
-    } catch (_) {
-      return false;
     }
   }
 
@@ -80,7 +73,6 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         setState(() => _isFavorite = true);
       }
     } catch (e) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
