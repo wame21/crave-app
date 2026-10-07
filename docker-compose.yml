@@ -16,10 +16,7 @@ services:
       # Los .sql de esta carpeta se ejecutan solo al crear el volumen por primera vez
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      # Por TCP y no por el socket: mientras corren los .sql de db/init,
-      # Postgres usa un servidor temporal que solo escucha en el socket, y
-      # "healthy" llegaría antes de que terminara de cargar los datos.
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
