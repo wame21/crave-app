@@ -6,6 +6,7 @@ import 'my_reviews_screen.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../di.dart';
 import '../models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      final profile = await UserService.getMyProfile();
+      final profile = await getIt<UserService>().getMyProfile();
       setState(() {
         _profile = profile;
         _isLoading = false;
@@ -47,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    await AuthService.logout();
+    await getIt<AuthService>().logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,

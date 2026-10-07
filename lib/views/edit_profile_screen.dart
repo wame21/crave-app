@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
 import '../services/user_service.dart';
+import '../di.dart';
 import '../models/user_model.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -31,7 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      final profile = await UserService.getMyProfile();
+      final profile = await getIt<UserService>().getMyProfile();
       setState(() {
         _profile = profile;
         _nameController.text = profile.profileName ?? '';
@@ -58,7 +59,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      await UserService.updateProfile({
+      await getIt<UserService>().updateProfile({
         'profile_name': name,
       });
       if (!mounted) return;

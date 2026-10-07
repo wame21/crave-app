@@ -8,7 +8,7 @@ El proyecto se está migrando a una arquitectura orientada a servicios (SOA) por
 
 ```
 .
-├── backend/              # API FastAPI (routers, schemas, utils)
+├── backend/              # API FastAPI (ver backend/README.md)
 ├── db/init/              # Scripts .sql que Postgres ejecuta al crear el volumen
 ├── docker-compose.yml    # PostgreSQL 17 para desarrollo local
 ├── lib/                  # App Flutter
@@ -41,7 +41,7 @@ docker compose up -d --wait        # PostgreSQL 17 en localhost:5432, queda "hea
 
 Cadena de conexión: `postgresql://crave:crave_dev@localhost:5432/crave_db`
 
-Si el puerto 5432 está ocupado: `POSTGRES_PORT=5433 docker compose up -d --wait`.
+Si el puerto 5432 está ocupado: `POSTGRES_PORT=5433 docker compose up -d --wait` (y usa ese puerto en `DATABASE_URL`, en `backend/.env`).
 
 ```bash
 docker exec -it crave-postgres psql -U crave -d crave_db   # consola SQL
@@ -49,29 +49,40 @@ docker compose down                                         # detener (conserva 
 docker compose down -v && docker compose up -d --wait       # borrar datos y volver a correr db/init/
 ```
 
-Los `.sql` de `db/init/` se ejecutan en orden alfabético **solo la primera vez** que se crea el volumen `crave_pgdata`.
+Los `.sql` de `db/init/` se ejecutan en orden alfabético **solo la primera vez** que se crea el volumen `crave_pgdata`. Si cambian (por ejemplo, después de un `git pull`), recrea el volumen con el último comando de arriba.
+
+El seed crea dos clientes (`ana@example.com`, `carlos@example.com`) y dos dueños (`maria@example.com`, `jorge@example.com`), todos con la contraseña `123456`.
 
 El proyecto de Compose se llama siempre `crave-app`, así que todos los worktrees del repo comparten el mismo contenedor (`crave-postgres`) y el mismo volumen.
 
 ## 2. Backend (FastAPI)
+
+Con la base de datos del paso 1 ya levantada:
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env               # y define JWT_SECRET_KEY (ver abajo)
 uvicorn main:app --reload --port 8000
 ```
 
 `uvicorn` debe ejecutarse dentro de `backend/`, porque los módulos se importan como `from config import …`.
 
+El servidor **no arranca** si falta `JWT_SECRET_KEY` o si no puede conectarse a PostgreSQL (`DATABASE_URL`). Para generar una clave:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Las demás variables (`DATABASE_URL`, `CORS_ORIGINS`, `GEMINI_API_KEY`, …) están en `backend/.env.example` y se explican en [backend/README.md](backend/README.md).
+
 - Salud: http://localhost:8000/health
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-Variables de entorno opcionales (en `backend/.env`, que no se versiona): `JWT_SECRET_KEY`, `JWT_ALGORITHM`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` y `GEMINI_API_KEY`. Sin `GEMINI_API_KEY`, el Genio responde con reglas por palabras clave.
-
-> **Estado actual:** `backend/database.py` todavía usa la API REST de Supabase, que ya no existe. El servidor arranca y sirve `/health` y `/docs`, pero los endpoints que leen o escriben datos fallarán hasta que [#17](https://github.com/wame21/crave-app/issues/17) lo reemplace por PostgreSQL y [#16](https://github.com/wame21/crave-app/issues/16) agregue el esquema en `db/init/`.
+> **Estado actual:** la API se está reescribiendo como servicios bajo `/api/v1` (Ola 2, issues [#20](https://github.com/wame21/crave-app/issues/20)–[#24](https://github.com/wame21/crave-app/issues/24)). Por ahora solo responden `/` y `/health`: el código de `backend/routers/` es de la versión anterior y no se monta. Por eso la app Flutter todavía no puede iniciar sesión; se alineará con `/api/v1` en [#26](https://github.com/wame21/crave-app/issues/26).
 
 ## 3. App (Flutter)
 
@@ -80,11 +91,18 @@ flutter pub get
 flutter run                        # o: flutter run -d chrome / -d linux
 ```
 
-La URL del backend está en `lib/services/api_client.dart` (`baseUrl`). Por defecto es `http://10.0.2.2:8000/api`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS, cámbiala a `http://localhost:8000/api`; en un teléfono físico, usa la IP de tu máquina en la red local. [#19](https://github.com/wame21/crave-app/issues/19) la vuelve configurable.
+La URL del backend se elige al compilar con `API_BASE_URL` (ver `lib/di.dart`). Por defecto es `http://10.0.2.2:8000/api`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:8000/api
+```
+
+En un teléfono físico, usa la IP de tu máquina en la red local. Para Flutter web, agrega además el origen de la app a `CORS_ORIGINS` en `backend/.env`.
 
 ## Verificación
 
 ```bash
 flutter analyze
 flutter test
+cd backend && pytest               # algunas pruebas necesitan la base de datos del paso 1
 ```

@@ -1,56 +1,47 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+
 import 'api_client.dart';
+import 'token_store.dart';
 
-class AuthService {
-  static const String tokenKey = 'auth_token';
-  static const String roleKey = 'user_role';
-  static const String userIdKey = 'user_id';
-  static const String profileNameKey = 'profile_name';
+abstract class AuthService {
+  Future<bool> isLoggedIn();
+  Future<String?> getRole();
+  Future<void> logout();
+  Future<void> login(String email, String password);
+  Future<void> registerClient(String name, String email, String password, String confirmPassword);
+  Future<void> registerOwner(String name, String email, String password, String confirmPassword, String restaurantName, String foodType);
+}
 
-  static Future<void> _saveAuthData(Map<String, dynamic> data) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(tokenKey, data['access_token']);
-    await prefs.setString(roleKey, data['role']);
-    await prefs.setInt(userIdKey, data['user_id']);
-    await prefs.setString(profileNameKey, data['profile_name']);
-  }
+class HttpAuthService implements AuthService {
+  final ApiClient _api;
+  final TokenStore _tokenStore;
 
-  static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(tokenKey);
-    return token != null && token.isNotEmpty;
-  }
+  HttpAuthService(this._api, this._tokenStore);
 
-  static Future<String?> getRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(roleKey);
-  }
+  @override
+  Future<bool> isLoggedIn() async => await _tokenStore.readToken() != null;
 
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(tokenKey);
-    await prefs.remove(roleKey);
-    await prefs.remove(userIdKey);
-    await prefs.remove(profileNameKey);
-  }
+  @override
+  Future<String?> getRole() => _tokenStore.readRole();
 
-  static Future<void> login(String email, String password) async {
-    final response = await ApiClient.post(
+  @override
+  Future<void> logout() => _tokenStore.clear();
+
+  @override
+  Future<void> login(String email, String password) async {
+    final response = await _api.post(
       '/auth/login',
       body: {
         'email': email,
         'password': password,
       },
     );
-
-    ApiClient.handleResponse(response);
-    final data = jsonDecode(response.body);
-    await _saveAuthData(data);
+    await _saveSession(response);
   }
 
-  static Future<void> registerClient(String name, String email, String password, String confirmPassword) async {
-    final response = await ApiClient.post(
+  @override
+  Future<void> registerClient(String name, String email, String password, String confirmPassword) async {
+    final response = await _api.post(
       '/auth/register/client',
       body: {
         'profile_name': name,
@@ -59,14 +50,12 @@ class AuthService {
         'confirm_password': confirmPassword,
       },
     );
-
-    ApiClient.handleResponse(response);
-    final data = jsonDecode(response.body);
-    await _saveAuthData(data);
+    await _saveSession(response);
   }
 
-  static Future<void> registerOwner(String name, String email, String password, String confirmPassword, String restaurantName, String foodType) async {
-    final response = await ApiClient.post(
+  @override
+  Future<void> registerOwner(String name, String email, String password, String confirmPassword, String restaurantName, String foodType) async {
+    final response = await _api.post(
       '/auth/register/owner',
       body: {
         'profile_name': name,
@@ -77,9 +66,11 @@ class AuthService {
         'food_type': foodType,
       },
     );
+    await _saveSession(response);
+  }
 
-    ApiClient.handleResponse(response);
-    final data = jsonDecode(response.body);
-    await _saveAuthData(data);
+  Future<void> _saveSession(http.Response response) async {
+    final data = _api.decode(response) as Map<String, dynamic>;
+    await _tokenStore.save(AuthSession.fromJson(data));
   }
 }
