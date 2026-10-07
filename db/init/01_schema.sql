@@ -60,10 +60,7 @@ CREATE TABLE catalog.restaurants (
 
 CREATE INDEX restaurants_food_type_idx      ON catalog.restaurants (food_type);
 CREATE INDEX restaurants_overall_rating_idx ON catalog.restaurants (overall_rating);
--- Un dueño tiene a lo sumo un restaurante (CatalogContract.create_for_owner
--- responde ConflictError). Los restaurantes sin dueño (NULL) no cuentan.
-CREATE UNIQUE INDEX restaurants_id_owner_key ON catalog.restaurants (id_owner)
-    WHERE id_owner IS NOT NULL;
+CREATE INDEX restaurants_id_owner_idx       ON catalog.restaurants (id_owner);
 
 
 -- ----------------------------------------------------------------------------

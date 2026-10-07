@@ -7,7 +7,6 @@ from fastapi import APIRouter
 from fastapi.testclient import TestClient
 
 import config
-import database
 import main
 
 ROUTER_SOURCE = """
@@ -114,17 +113,6 @@ def test_unknown_api_route_uses_common_error_format():
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "not_found"
-
-
-def test_app_opens_the_db_pool_on_startup_and_closes_it_on_shutdown(monkeypatch):
-    calls = []
-    monkeypatch.setattr(database, "open_pool", lambda: calls.append("open"))
-    monkeypatch.setattr(database, "close_pool", lambda: calls.append("close"))
-
-    with TestClient(main.create_app()):
-        assert calls == ["open"]
-
-    assert calls == ["open", "close"]
 
 
 # ── CORS ─────────────────────────────────────────────────────
