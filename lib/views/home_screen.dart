@@ -33,9 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final data = await getIt<RestaurantService>().getHomeData();
       setState(() {
-        _destacados = data['destacados'] ?? [];
-        _mejorValorados = data['mejor_valorados'] ?? [];
-        _novedades = data['novedades'] ?? [];
+        _destacados = data.featured;
+        _mejorValorados = data.topRated;
+        _novedades = data.newest;
         _isLoading = false;
       });
     } catch (e) {

@@ -67,7 +67,7 @@ class _SearchScreenState extends State<SearchScreen> {
         category: _selectedCategory,
       );
       setState(() {
-        _searchResults = results;
+        _searchResults = results.items;
         _isLoading = false;
       });
     } catch (e) {
@@ -191,7 +191,7 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: isSelected ? Colors.blue : Colors.black87, width: isSelected ? 3.0 : 2.5),
-                color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.white,
+                color: isSelected ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
               ),
               child: Icon(icon, size: 32, color: isSelected ? Colors.blue : Colors.black),
             ),
@@ -230,7 +230,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Container(
               width: 50,
               height: 50,
-              decoration: BoxDecoration(color: color.withOpacity(0.2), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.2), shape: BoxShape.circle),
               alignment: Alignment.center,
               child: Text(
                 restaurant.name.isNotEmpty ? restaurant.name[0].toUpperCase() : 'R',

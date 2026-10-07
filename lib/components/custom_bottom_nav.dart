@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../di.dart';
+import '../services/auth_service.dart';
 import '../views/home_screen.dart';
 import '../views/profile_screen.dart';
+import '../views/restaurant_profile_screen.dart';
 import '../views/genie_screen.dart';
 import '../views/search_screen.dart';
 
@@ -8,6 +11,19 @@ class CustomBottomNav extends StatelessWidget {
   final int currentIndex; // Para saber qué ícono iluminar
 
   const CustomBottomNav({super.key, required this.currentIndex});
+
+  /// Perfil: un dueño ve su restaurante (desde ahí lo edita); un cliente, su perfil.
+  Future<void> _openProfile(BuildContext context) async {
+    final isOwner = await getIt<AuthService>().getRole() == 'Owner';
+    if (!context.mounted) return;
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, anim1, anim2) => isOwner ? const RestaurantProfileScreen() : const ProfileScreen(),
+        transitionDuration: Duration.zero,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,13 +64,7 @@ class CustomBottomNav extends StatelessWidget {
             ),
           );
         } else if (index == 3) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, anim1, anim2) => const ProfileScreen(),
-              transitionDuration: Duration.zero,
-            ),
-          );
+          _openProfile(context);
         }
 
         // Aquí irás agregando el index 2 (Regalos) e index 3 (Perfil)

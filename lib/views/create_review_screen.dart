@@ -62,8 +62,8 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
     try {
       await getIt<ReviewService>().createReview(
         widget.restaurantId,
-        _serviceRating.toInt(),
         _foodRating.toInt(),
+        _serviceRating.toInt(),
         _ambienceRating.toInt(),
         _commentController.text.trim(),
       );
@@ -305,39 +305,28 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          _buildInteractiveStarRow(currentRating, onRatingChanged),
+          _buildInteractiveStarRow(title, currentRating, onRatingChanged),
         ],
       ),
     );
   }
 
-  Widget _buildInteractiveStarRow(double rating, Function(double) onRatingChanged) {
+  // Calificaciones enteras de 1 a 5: es lo que acepta la API (antes se podían
+  // marcar medias estrellas, que al enviarse se truncaban sin avisar).
+  Widget _buildInteractiveStarRow(String title, double rating, Function(double) onRatingChanged) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center, 
+      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(5, (index) {
-        double starValue = index + 1.0; 
-        IconData iconData;
-
-        if (rating >= starValue) {
-          iconData = Icons.star;
-        } else if (rating >= starValue - 0.5) {
-          iconData = Icons.star_half;
-        } else {
-          iconData = Icons.star_border;
-        }
+        double starValue = index + 1.0;
+        final selected = rating >= starValue;
 
         return GestureDetector(
-          onTapDown: (TapDownDetails details) {
-            if (details.localPosition.dx <= 24) {
-              onRatingChanged(starValue - 0.5); 
-            } else {
-              onRatingChanged(starValue); 
-            }
-          },
+          key: ValueKey('rating-$title-${index + 1}'),
+          onTap: () => onRatingChanged(starValue),
           child: Icon(
-            iconData,
-            color: rating >= starValue - 0.5 ? Colors.yellow.shade700 : Colors.black87, 
-            size: 48, 
+            selected ? Icons.star : Icons.star_border,
+            color: selected ? Colors.yellow.shade700 : Colors.black87,
+            size: 48,
           ),
         );
       }),

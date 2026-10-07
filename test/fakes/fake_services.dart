@@ -1,8 +1,10 @@
 // Servicios en memoria para las pruebas de widgets: se registran en `getIt`
 // en lugar de las implementaciones HTTP.
 import 'package:crave_app/models/favorite_model.dart';
+import 'package:crave_app/models/page_model.dart';
 import 'package:crave_app/models/restaurant_model.dart';
 import 'package:crave_app/models/review_model.dart';
+import 'package:crave_app/models/screen_models.dart';
 import 'package:crave_app/models/user_model.dart';
 import 'package:crave_app/services/api_client.dart';
 import 'package:crave_app/services/auth_service.dart';
@@ -13,6 +15,8 @@ import 'package:crave_app/services/review_service.dart';
 import 'package:crave_app/services/user_service.dart';
 
 ApiException _notFound(String what) => ApiException('$what no encontrado', statusCode: 404);
+
+PageModel<T> _page<T>(List<T> items) => PageModel(items: items, total: items.length, limit: 100, offset: 0);
 
 class FakeAuthService implements AuthService {
   bool loggedIn;
@@ -59,24 +63,40 @@ class FakeRestaurantService implements RestaurantService {
 
   FakeRestaurantService([List<RestaurantModel>? restaurants]) : restaurants = restaurants ?? [];
 
+  /// Reseñas y favoritos que devuelve `getRestaurantScreen`.
+  List<ReviewModel> screenReviews = [];
+  bool? screenIsFavorite;
+  List<String> screenWarnings = [];
+
   @override
-  Future<Map<String, List<RestaurantModel>>> getHomeData() async {
+  Future<HomeData> getHomeData() async {
     final byRating = [...restaurants]
       ..sort((a, b) => (b.overallRating ?? 0).compareTo(a.overallRating ?? 0));
-    return {
-      'destacados': byRating.take(5).toList(),
-      'mejor_valorados': byRating.take(10).toList(),
-      'novedades': restaurants.reversed.take(10).toList(),
-    };
+    return HomeData(
+      featured: byRating.take(5).toList(),
+      topRated: byRating.take(10).toList(),
+      recommended: byRating.take(10).toList(),
+      newest: restaurants.reversed.take(10).toList(),
+    );
   }
 
   @override
-  Future<List<RestaurantModel>> listRestaurants({String? query, String? category}) async {
-    return restaurants.where((r) {
+  Future<RestaurantScreenData> getRestaurantScreen(int id, {int reviewsLimit = 20}) async {
+    return RestaurantScreenData(
+      restaurant: await getRestaurant(id),
+      reviews: _page(screenReviews),
+      isFavorite: screenIsFavorite,
+      warnings: screenWarnings,
+    );
+  }
+
+  @override
+  Future<PageModel<RestaurantModel>> listRestaurants({String? query, String? category, int limit = 50}) async {
+    return _page(restaurants.where((r) {
       final matchesQuery = query == null || r.name.toLowerCase().contains(query.toLowerCase());
       final matchesCategory = category == null || r.foodType == category;
       return matchesQuery && matchesCategory;
-    }).toList();
+    }).toList());
   }
 
   @override
@@ -108,12 +128,12 @@ class FakeReviewService implements ReviewService {
   FakeReviewService([List<ReviewModel>? reviews]) : reviews = reviews ?? [];
 
   @override
-  Future<List<ReviewModel>> getRestaurantReviews(int restaurantId) async {
-    return reviews.where((r) => r.idRestaurant == restaurantId).toList();
+  Future<PageModel<ReviewModel>> getRestaurantReviews(int restaurantId, {int limit = 100}) async {
+    return _page(reviews.where((r) => r.idRestaurant == restaurantId).toList());
   }
 
   @override
-  Future<List<ReviewModel>> getMyReviews() async => List.of(reviews);
+  Future<PageModel<ReviewModel>> getMyReviews({int limit = 100}) async => _page(List.of(reviews));
 
   @override
   Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment) async {
@@ -141,9 +161,12 @@ class FakeFavoritesService implements FavoritesService {
   FakeFavoritesService([Set<int>? restaurantIds]) : restaurantIds = restaurantIds ?? {};
 
   @override
-  Future<List<FavoriteModel>> getMyFavorites() async {
-    return restaurantIds.map(_favorite).toList();
+  Future<PageModel<FavoriteModel>> getMyFavorites({int limit = 100}) async {
+    return _page(restaurantIds.map(_favorite).toList());
   }
+
+  @override
+  Future<bool> isFavorite(int restaurantId) async => restaurantIds.contains(restaurantId);
 
   @override
   Future<FavoriteModel> addFavorite(int restaurantId) async {
