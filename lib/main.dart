@@ -5,10 +5,26 @@ import 'components/responsive_layout.dart';
 import 'di.dart';
 import 'services/auth_service.dart';
 
+/// Navegador de la app, para volver al login cuando la sesión vence.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupDependencies();
+  setupDependencies(onSessionExpired: showLoginAfterSessionExpired);
   runApp(await createApp());
+}
+
+/// Lleva al login, borrando el historial de pantallas, y avisa que la sesión venció.
+Future<void> showLoginAfterSessionExpired() async {
+  final navigator = navigatorKey.currentState;
+  if (navigator == null) return;
+  navigator.pushAndRemoveUntil(
+    MaterialPageRoute(builder: (_) => const LoginScreen()),
+    (_) => false,
+  );
+  ScaffoldMessenger.maybeOf(navigator.context)?.showSnackBar(
+    const SnackBar(content: Text('Tu sesión expiró. Inicia sesión de nuevo.')),
+  );
 }
 
 /// Crea la app: abre en [HomeScreen] si hay una sesión guardada y en
@@ -26,6 +42,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Crave App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

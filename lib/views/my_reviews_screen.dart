@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
+import '../models/page_model.dart';
 import '../models/review_model.dart';
 import '../models/user_model.dart';
 import '../services/review_service.dart';
@@ -40,7 +41,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
       setState(() {
         _profile = results[0] as UserModel;
-        _reviews = results[1] as List<ReviewModel>;
+        _reviews = (results[1] as PageModel<ReviewModel>).items;
         _isLoading = false;
       });
     } catch (e) {
@@ -100,7 +101,7 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                _profile?.profileName?.isNotEmpty == true ? _profile!.profileName![0].toUpperCase() : 'U',
+                                (_profile?.profileName.isNotEmpty ?? false) ? _profile!.profileName[0].toUpperCase() : 'U',
                                 style: const TextStyle(fontSize: 50, color: Colors.black54, fontWeight: FontWeight.bold),
                               ),
                             ),

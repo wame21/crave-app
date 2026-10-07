@@ -1,9 +1,15 @@
+import '../models/page_model.dart';
 import '../models/restaurant_model.dart';
+import '../models/screen_models.dart';
 import 'api_client.dart';
 
 abstract class RestaurantService {
-  Future<Map<String, List<RestaurantModel>>> getHomeData();
-  Future<List<RestaurantModel>> listRestaurants({String? query, String? category});
+  /// Pantalla de inicio, compuesta por el BFF.
+  Future<HomeData> getHomeData();
+
+  /// Pantalla de detalle (restaurante, reseñas y favorito), compuesta por el BFF.
+  Future<RestaurantScreenData> getRestaurantScreen(int id, {int reviewsLimit = 20});
+  Future<PageModel<RestaurantModel>> listRestaurants({String? query, String? category, int limit = 50});
   Future<RestaurantModel> getRestaurant(int id);
   Future<RestaurantModel> getMyRestaurant();
   Future<RestaurantModel> updateRestaurant(int id, Map<String, dynamic> data);
@@ -16,27 +22,24 @@ class HttpRestaurantService implements RestaurantService {
   HttpRestaurantService(this._api);
 
   @override
-  Future<Map<String, List<RestaurantModel>>> getHomeData() async {
-    final data = _api.decode(await _api.get('/restaurants/home'));
-
-    List<RestaurantModel> parse(String key) =>
-        (data[key] as List).map((e) => RestaurantModel.fromJson(e)).toList();
-
-    return {
-      'destacados': parse('destacados'),
-      'mejor_valorados': parse('mejor_valorados'),
-      'novedades': parse('novedades'),
-    };
+  Future<HomeData> getHomeData() async {
+    return HomeData.fromJson(_api.decode(await _api.get('/bff/home')));
   }
 
   @override
-  Future<List<RestaurantModel>> listRestaurants({String? query, String? category}) async {
-    final response = await _api.get('/restaurants/', query: {
+  Future<RestaurantScreenData> getRestaurantScreen(int id, {int reviewsLimit = 20}) async {
+    final response = await _api.get('/bff/restaurants/$id', query: {'limit': '$reviewsLimit'});
+    return RestaurantScreenData.fromJson(_api.decode(response));
+  }
+
+  @override
+  Future<PageModel<RestaurantModel>> listRestaurants({String? query, String? category, int limit = 50}) async {
+    final response = await _api.get('/restaurants', query: {
       if (query != null && query.isNotEmpty) 'q': query,
       if (category != null && category.isNotEmpty) 'category': category,
+      'limit': '$limit',
     });
-    final data = _api.decode(response);
-    return (data['restaurants'] as List).map((e) => RestaurantModel.fromJson(e)).toList();
+    return PageModel.fromJson(_api.decode(response), RestaurantModel.fromJson);
   }
 
   @override

@@ -1,9 +1,10 @@
+import '../models/page_model.dart';
 import '../models/review_model.dart';
 import 'api_client.dart';
 
 abstract class ReviewService {
-  Future<List<ReviewModel>> getRestaurantReviews(int restaurantId);
-  Future<List<ReviewModel>> getMyReviews();
+  Future<PageModel<ReviewModel>> getRestaurantReviews(int restaurantId, {int limit = 100});
+  Future<PageModel<ReviewModel>> getMyReviews({int limit = 100});
   Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment);
   Future<void> deleteReview(int reviewId);
 }
@@ -14,21 +15,21 @@ class HttpReviewService implements ReviewService {
   HttpReviewService(this._api);
 
   @override
-  Future<List<ReviewModel>> getRestaurantReviews(int restaurantId) async {
-    final data = _api.decode(await _api.get('/reviews/restaurant/$restaurantId'));
-    return (data['reviews'] as List).map((e) => ReviewModel.fromJson(e)).toList();
+  Future<PageModel<ReviewModel>> getRestaurantReviews(int restaurantId, {int limit = 100}) async {
+    final response = await _api.get('/reviews/restaurant/$restaurantId', query: {'limit': '$limit'});
+    return PageModel.fromJson(_api.decode(response), ReviewModel.fromJson);
   }
 
   @override
-  Future<List<ReviewModel>> getMyReviews() async {
-    final data = _api.decode(await _api.get('/reviews/me'));
-    return (data['reviews'] as List).map((e) => ReviewModel.fromJson(e)).toList();
+  Future<PageModel<ReviewModel>> getMyReviews({int limit = 100}) async {
+    final response = await _api.get('/reviews/me', query: {'limit': '$limit'});
+    return PageModel.fromJson(_api.decode(response), ReviewModel.fromJson);
   }
 
   @override
   Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment) async {
     final data = _api.decode(await _api.post(
-      '/reviews/',
+      '/reviews',
       body: {
         'id_restaurant': restaurantId,
         'rating_food': food,
@@ -37,7 +38,7 @@ class HttpReviewService implements ReviewService {
         'comment': comment,
       },
     ));
-    return ReviewModel.fromJson(data['review']);
+    return ReviewModel.fromJson(data);
   }
 
   @override

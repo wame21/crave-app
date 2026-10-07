@@ -11,7 +11,10 @@ class ApiException implements Exception {
   /// Código HTTP de la respuesta, o `null` si no se pudo conectar.
   final int? statusCode;
 
-  const ApiException(this.message, {this.statusCode});
+  /// Código del error de la API (p. ej. `invalid_credentials`), si lo hay.
+  final String? code;
+
+  const ApiException(this.message, {this.statusCode, this.code});
 
   @override
   String toString() => message;
@@ -20,19 +23,23 @@ class ApiException implements Exception {
 /// Cliente HTTP de la API.
 ///
 /// Construye las URLs a partir de [baseUrl] y agrega el token guardado en el
-/// [TokenStore] como header `Authorization: Bearer <token>`.
+/// [TokenStore] como header `Authorization: Bearer <token>`. Si una petición
+/// con token recibe 401 (sesión vencida o inválida), llama a [onUnauthorized].
 class ApiClient {
   final Uri _baseUri;
   final http.Client _http;
   final TokenStore _tokenStore;
+  final Future<void> Function()? _onUnauthorized;
 
   ApiClient({
     required String baseUrl,
     required http.Client httpClient,
     required TokenStore tokenStore,
+    Future<void> Function()? onUnauthorized,
   })  : _baseUri = Uri.parse(baseUrl),
         _http = httpClient,
-        _tokenStore = tokenStore;
+        _tokenStore = tokenStore,
+        _onUnauthorized = onUnauthorized;
 
   /// URL de [path] (relativo a la URL base) con los parámetros [query] codificados.
   Uri uri(String path, [Map<String, String>? query]) {
@@ -74,18 +81,25 @@ class ApiClient {
   /// Lanza [ApiException] si [response] no es 2xx.
   void check(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) return;
-    throw ApiException(_errorMessage(response), statusCode: response.statusCode);
+    final (message, code) = _error(response);
+    throw ApiException(message, statusCode: response.statusCode, code: code);
   }
 
   Future<http.Response> _send(
     Future<http.Response> Function(Map<String, String> headers) request,
   ) async {
     final headers = await _headers();
+    final http.Response response;
     try {
-      return await request(headers);
+      response = await request(headers);
     } catch (e) {
       throw ApiException('No se pudo conectar con el servidor: $e');
     }
+    // Solo si se envió un token: un 401 en el login es un error de credenciales.
+    if (response.statusCode == 401 && headers.containsKey('Authorization')) {
+      await _onUnauthorized?.call();
+    }
+    return response;
   }
 
   Future<Map<String, String>> _headers() async {
@@ -104,15 +118,24 @@ class ApiClient {
     return body == null ? null : jsonEncode(body);
   }
 
-  static String _errorMessage(http.Response response) {
+  /// Mensaje y código del error. La API responde
+  /// `{"error": {"code", "message", "details": [{"field", "message"}]}}`;
+  /// en los errores de validación se muestra el detalle del primer campo.
+  static (String, String?) _error(http.Response response) {
     try {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
-      if (data is Map && data['detail'] is String) {
-        return data['detail'];
+      final error = data is Map ? data['error'] : null;
+      if (error is Map && error['message'] is String) {
+        final details = error['details'];
+        if (details is List && details.isNotEmpty && details.first is Map && details.first['message'] is String) {
+          final detail = (details.first['message'] as String).replaceFirst('Value error, ', '');
+          return (detail, error['code'] as String?);
+        }
+        return (error['message'] as String, error['code'] as String?);
       }
     } catch (_) {
       // Cuerpo vacío o que no es JSON: se usa el mensaje genérico.
     }
-    return 'Error ${response.statusCode}';
+    return ('Error ${response.statusCode}', null);
   }
 }

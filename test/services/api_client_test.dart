@@ -15,11 +15,18 @@ http.Response _json(Object body, int status) {
   return http.Response.bytes(utf8.encode(jsonEncode(body)), status);
 }
 
+http.Response _error(int status, String code, String message, {List<Map<String, String>>? details}) {
+  return _json({
+    'error': {'code': code, 'message': message, 'details': ?details},
+  }, status);
+}
+
 void main() {
   late InMemoryTokenStore tokenStore;
   late List<http.Request> requests;
+  late int sessionExpirations;
 
-  ApiClient client({http.Response? reply, String baseUrl = 'http://api.test/api'}) {
+  ApiClient client({http.Response? reply, String baseUrl = 'http://api.test/api/v1'}) {
     return ApiClient(
       baseUrl: baseUrl,
       tokenStore: tokenStore,
@@ -27,12 +34,14 @@ void main() {
         requests.add(request);
         return reply ?? http.Response('{}', 200);
       }),
+      onUnauthorized: () async => sessionExpirations++,
     );
   }
 
   setUp(() {
     tokenStore = InMemoryTokenStore();
     requests = [];
+    sessionExpirations = 0;
   });
 
   group('headers', () {
@@ -45,7 +54,7 @@ void main() {
     });
 
     test('sin sesión no envía Authorization', () async {
-      await client().get('/restaurants/');
+      await client().get('/restaurants');
 
       expect(requests.single.headers.containsKey('Authorization'), isFalse);
     });
@@ -59,66 +68,78 @@ void main() {
   });
 
   group('URLs', () {
-    test('agrega la ruta a la URL base', () async {
+    test('agrega la ruta a la URL base de /api/v1', () async {
       await client().get('/users/me');
 
-      expect(requests.single.url.toString(), 'http://api.test/api/users/me');
+      expect(requests.single.url.toString(), 'http://api.test/api/v1/users/me');
     });
 
     test('tolera una barra final en la URL base', () async {
-      await client(baseUrl: 'http://api.test/api/').get('/users/me');
+      await client(baseUrl: 'http://api.test/api/v1/').get('/users/me');
 
-      expect(requests.single.url.toString(), 'http://api.test/api/users/me');
+      expect(requests.single.url.toString(), 'http://api.test/api/v1/users/me');
     });
 
     test('codifica los parámetros de búsqueda', () async {
-      await client().get('/restaurants/', query: {'q': 'café & tacos', 'category': 'Café'});
+      await client().get('/restaurants', query: {'q': 'café & tacos', 'category': 'Café'});
 
       final url = requests.single.url;
-      expect(url.path, '/api/restaurants/');
+      expect(url.path, '/api/v1/restaurants');
       expect(url.queryParameters, {'q': 'café & tacos', 'category': 'Café'});
       expect(url.query, isNot(contains(' ')));
     });
 
     test('sin parámetros no agrega "?"', () async {
-      await client().get('/restaurants/', query: {});
+      await client().get('/restaurants', query: {});
 
-      expect(requests.single.url.toString(), 'http://api.test/api/restaurants/');
+      expect(requests.single.url.toString(), 'http://api.test/api/v1/restaurants');
     });
   });
 
-  group('respuestas', () {
+  group('respuestas y errores', () {
     test('decode devuelve el JSON y respeta los acentos aunque no venga el charset', () {
       final data = client().decode(_json({'name': 'Taquería El Güero'}, 200));
 
       expect(data, {'name': 'Taquería El Güero'});
     });
 
-    test('decode de un cuerpo vacío devuelve null', () {
+    test('decode de un cuerpo vacío (204) devuelve null', () {
       expect(client().decode(http.Response('', 204)), isNull);
     });
 
-    test('una respuesta no 2xx lanza ApiException con el detail y el código', () {
+    test('lee error.message y error.code del formato de la API', () {
       final api = client();
 
       expect(
-        () => api.decode(_json({'detail': 'Correo o contraseña incorrectos'}, 401)),
+        () => api.decode(_error(401, 'invalid_credentials', 'Correo o contraseña incorrectos')),
         throwsA(isA<ApiException>()
             .having((e) => e.message, 'message', 'Correo o contraseña incorrectos')
+            .having((e) => e.code, 'code', 'invalid_credentials')
             .having((e) => e.statusCode, 'statusCode', 401)),
       );
     });
 
-    test('sin detail usa un mensaje genérico con el código', () {
+    test('en un error de validación muestra el detalle del campo', () {
+      final response = _error(422, 'validation_error', 'Los datos enviados no son válidos', details: [
+        {'field': 'body.confirm_password', 'message': 'Value error, Las contraseñas no coinciden'},
+      ]);
+
       expect(
-        () => client().check(http.Response('<html>', 502)),
+        () => client().check(response),
+        throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Las contraseñas no coinciden')),
+      );
+    });
+
+    test('un cuerpo que no es del formato de la API usa un mensaje genérico con el código', () {
+      expect(
+        () => client().check(http.Response('<html>Bad gateway</html>', 502)),
         throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Error 502')),
       );
     });
 
     test('un fallo de conexión lanza ApiException sin código', () async {
       final api = ApiClient(
-        baseUrl: 'http://api.test/api',
+        baseUrl: 'http://api.test/api/v1',
         tokenStore: tokenStore,
         httpClient: MockClient((_) async => throw http.ClientException('Connection refused')),
       );
@@ -133,6 +154,30 @@ void main() {
 
     test('toString de ApiException es solo el mensaje, para mostrarlo en pantalla', () {
       expect(const ApiException('Sin conexión').toString(), 'Sin conexión');
+    });
+  });
+
+  group('sesión vencida (401)', () {
+    test('un 401 de una petición con token cierra la sesión', () async {
+      tokenStore.session = _session;
+
+      await client(reply: _error(401, 'invalid_token', 'Token inválido o expirado')).get('/users/me');
+
+      expect(sessionExpirations, 1);
+    });
+
+    test('un 401 sin token (credenciales incorrectas en el login) no cierra nada', () async {
+      await client(reply: _error(401, 'invalid_credentials', 'Correo o contraseña incorrectos')).post('/auth/login');
+
+      expect(sessionExpirations, 0);
+    });
+
+    test('un 403 con token no cierra la sesión', () async {
+      tokenStore.session = _session;
+
+      await client(reply: _error(403, 'forbidden', 'Prohibido')).put('/restaurants/3');
+
+      expect(sessionExpirations, 0);
     });
   });
 }
