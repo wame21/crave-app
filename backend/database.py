@@ -19,7 +19,7 @@ Uso en un router:
 """
 import threading
 from collections.abc import AsyncIterator, Iterator
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI
@@ -89,22 +89,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         close_pool()
 
 
-@contextmanager
-def connection() -> Iterator[Connection[DictRow]]:
-    """
-    Presta una conexión del pool fuera de un request, con su propia transacción:
-    commit al salir del bloque o rollback si se lanza una excepción.
-
-    La usan las implementaciones de los contratos (`contracts/`), cuyas
-    llamadas son atómicas y no participan en la transacción de quien llama:
-
-        with connection() as conn:
-            fetch_all(conn, "SELECT ...")
-    """
-    with _get_pool().connection() as conn:
-        yield conn
-
-
 def get_db() -> Iterator[Connection[DictRow]]:
     """
     Presta una conexión del pool durante un request, dentro de una transacción.
@@ -115,7 +99,7 @@ def get_db() -> Iterator[Connection[DictRow]]:
 
     Úsala a través de `DbConn` y no con `Depends(get_db)`: ver `DbConn`.
     """
-    with connection() as conn:
+    with _get_pool().connection() as conn:
         yield conn
 
 

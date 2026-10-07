@@ -25,7 +25,3 @@ env/
 
 # Logs
 *.log
-
-# Cobertura de pytest-cov
-.coverage
-htmlcov/
