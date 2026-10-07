@@ -6,6 +6,9 @@ Monta automáticamente bajo /api/v1 el `router` de:
   - el BFF: `bff/router.py`
 Para agregar rutas no hace falta editar este archivo.
 
+Al arrancar abre el pool de PostgreSQL y espera a la BD: si no responde,
+el servidor no arranca (en lugar de fallar en el primer request).
+
 Para iniciar el servidor:
     uvicorn main:app --reload --port 8000
 
@@ -24,6 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import config
 from core.errors import COMMON_ERROR_RESPONSES, register_error_handlers
+from database import lifespan
 
 API_V1_PREFIX = "/api/v1"
 APP_VERSION = "1.0.0"
@@ -108,6 +112,7 @@ def create_app() -> FastAPI:
             "name": "Equipo Crave",
             "email": "dev@crave-app.com",
         },
+        lifespan=lifespan,
     )
 
     register_error_handlers(app)
