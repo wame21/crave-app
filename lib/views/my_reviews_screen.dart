@@ -4,7 +4,6 @@ import '../models/review_model.dart';
 import '../models/user_model.dart';
 import '../services/review_service.dart';
 import '../services/user_service.dart';
-import '../di.dart';
 
 class MyReviewsScreen extends StatefulWidget {
   const MyReviewsScreen({super.key});
@@ -33,8 +32,8 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
     });
 
     try {
-      final profileFuture = getIt<UserService>().getMyProfile();
-      final reviewsFuture = getIt<ReviewService>().getMyReviews();
+      final profileFuture = UserService.getMyProfile();
+      final reviewsFuture = ReviewService.getMyReviews();
 
       final results = await Future.wait([profileFuture, reviewsFuture]);
 

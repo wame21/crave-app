@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import '../services/auth_service.dart';
-import '../di.dart';
 
 class CustomerRegistrationScreen extends StatefulWidget {
   const CustomerRegistrationScreen({super.key});
@@ -41,7 +40,7 @@ class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen>
     });
 
     try {
-      await getIt<AuthService>().registerClient(name, email, password, confirmPassword);
+      await AuthService.registerClient(name, email, password, confirmPassword);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

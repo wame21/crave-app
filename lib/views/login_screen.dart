@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'account_type_screen.dart';
 import 'home_screen.dart';
 import '../services/auth_service.dart';
-import '../di.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await getIt<AuthService>().login(email, password);
+      await AuthService.login(email, password);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,

@@ -3,7 +3,6 @@ import '../components/custom_bottom_nav.dart';
 import '../models/restaurant_model.dart';
 import '../services/restaurant_service.dart';
 import '../services/review_service.dart';
-import '../di.dart';
 
 class CreateReviewScreen extends StatefulWidget {
   final int restaurantId;
@@ -34,7 +33,7 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
 
   Future<void> _loadRestaurant() async {
     try {
-      final restaurant = await getIt<RestaurantService>().getRestaurant(widget.restaurantId);
+      final restaurant = await RestaurantService.getRestaurant(widget.restaurantId);
       setState(() {
         _restaurant = restaurant;
         _isLoadingData = false;
@@ -60,7 +59,7 @@ class _CreateReviewScreenState extends State<CreateReviewScreen> {
     });
 
     try {
-      await getIt<ReviewService>().createReview(
+      await ReviewService.createReview(
         widget.restaurantId,
         _serviceRating.toInt(),
         _foodRating.toInt(),

@@ -6,7 +6,6 @@ import 'edit_restaurant_screen.dart';
 import '../models/restaurant_model.dart';
 import '../services/restaurant_service.dart';
 import '../services/auth_service.dart';
-import '../di.dart';
 
 class RestaurantProfileScreen extends StatefulWidget {
   const RestaurantProfileScreen({super.key});
@@ -33,7 +32,7 @@ class _RestaurantProfileScreenState extends State<RestaurantProfileScreen> {
     });
 
     try {
-      final restaurant = await getIt<RestaurantService>().getMyRestaurant();
+      final restaurant = await RestaurantService.getMyRestaurant();
       setState(() {
         _restaurant = restaurant;
         _isLoading = false;
@@ -47,7 +46,7 @@ class _RestaurantProfileScreenState extends State<RestaurantProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    await getIt<AuthService>().logout();
+    await AuthService.logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,

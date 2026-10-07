@@ -1,62 +1,67 @@
+import 'dart:convert';
 import '../models/restaurant_model.dart';
 import 'api_client.dart';
 
-abstract class RestaurantService {
-  Future<Map<String, List<RestaurantModel>>> getHomeData();
-  Future<List<RestaurantModel>> listRestaurants({String? query, String? category});
-  Future<RestaurantModel> getRestaurant(int id);
-  Future<RestaurantModel> getMyRestaurant();
-  Future<RestaurantModel> updateRestaurant(int id, Map<String, dynamic> data);
-  Future<List<String>> getCategories();
-}
+class RestaurantService {
+  static Future<Map<String, List<RestaurantModel>>> getHomeData() async {
+    final response = await ApiClient.get('/restaurants/home');
+    ApiClient.handleResponse(response);
 
-class HttpRestaurantService implements RestaurantService {
-  final ApiClient _api;
-
-  HttpRestaurantService(this._api);
-
-  @override
-  Future<Map<String, List<RestaurantModel>>> getHomeData() async {
-    final data = _api.decode(await _api.get('/restaurants/home'));
-
-    List<RestaurantModel> parse(String key) =>
-        (data[key] as List).map((e) => RestaurantModel.fromJson(e)).toList();
+    final data = jsonDecode(response.body);
+    
+    List<RestaurantModel> destacados = (data['destacados'] as List)
+        .map((e) => RestaurantModel.fromJson(e))
+        .toList();
+        
+    List<RestaurantModel> mejorValorados = (data['mejor_valorados'] as List)
+        .map((e) => RestaurantModel.fromJson(e))
+        .toList();
+        
+    List<RestaurantModel> novedades = (data['novedades'] as List)
+        .map((e) => RestaurantModel.fromJson(e))
+        .toList();
 
     return {
-      'destacados': parse('destacados'),
-      'mejor_valorados': parse('mejor_valorados'),
-      'novedades': parse('novedades'),
+      'destacados': destacados,
+      'mejor_valorados': mejorValorados,
+      'novedades': novedades,
     };
   }
 
-  @override
-  Future<List<RestaurantModel>> listRestaurants({String? query, String? category}) async {
-    final response = await _api.get('/restaurants/', query: {
-      if (query != null && query.isNotEmpty) 'q': query,
-      if (category != null && category.isNotEmpty) 'category': category,
-    });
-    final data = _api.decode(response);
+  static Future<List<RestaurantModel>> listRestaurants({String? query, String? category}) async {
+    String url = '/restaurants/?';
+    if (query != null && query.isNotEmpty) url += 'q=$query&';
+    if (category != null && category.isNotEmpty) url += 'category=$category&';
+
+    final response = await ApiClient.get(url);
+    ApiClient.handleResponse(response);
+
+    final data = jsonDecode(response.body);
     return (data['restaurants'] as List).map((e) => RestaurantModel.fromJson(e)).toList();
   }
 
-  @override
-  Future<RestaurantModel> getRestaurant(int id) async {
-    return RestaurantModel.fromJson(_api.decode(await _api.get('/restaurants/$id')));
+  static Future<RestaurantModel> getRestaurant(int id) async {
+    final response = await ApiClient.get('/restaurants/$id');
+    ApiClient.handleResponse(response);
+    return RestaurantModel.fromJson(jsonDecode(response.body));
   }
 
-  @override
-  Future<RestaurantModel> getMyRestaurant() async {
-    return RestaurantModel.fromJson(_api.decode(await _api.get('/restaurants/me')));
+  static Future<RestaurantModel> getMyRestaurant() async {
+    final response = await ApiClient.get('/restaurants/me');
+    ApiClient.handleResponse(response);
+    return RestaurantModel.fromJson(jsonDecode(response.body));
   }
 
-  @override
-  Future<RestaurantModel> updateRestaurant(int id, Map<String, dynamic> data) async {
-    return RestaurantModel.fromJson(_api.decode(await _api.put('/restaurants/$id', body: data)));
+  static Future<RestaurantModel> updateRestaurant(int id, Map<String, dynamic> data) async {
+    final response = await ApiClient.put('/restaurants/$id', body: data);
+    ApiClient.handleResponse(response);
+    return RestaurantModel.fromJson(jsonDecode(response.body));
   }
 
-  @override
-  Future<List<String>> getCategories() async {
-    final data = _api.decode(await _api.get('/restaurants/categories'));
+  static Future<List<String>> getCategories() async {
+    final response = await ApiClient.get('/restaurants/categories');
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return List<String>.from(data['categories']);
   }
 }

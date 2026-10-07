@@ -4,7 +4,6 @@ import '../components/custom_bottom_nav.dart';
 import 'search_screen.dart';
 import 'restaurant_detail_screen.dart';
 import '../services/restaurant_service.dart';
-import '../di.dart';
 import '../models/restaurant_model.dart';
 import 'favorites_screen.dart';
 
@@ -31,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadHomeData() async {
     try {
-      final data = await getIt<RestaurantService>().getHomeData();
+      final data = await RestaurantService.getHomeData();
       setState(() {
         _destacados = data['destacados'] ?? [];
         _mejorValorados = data['mejor_valorados'] ?? [];

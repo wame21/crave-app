@@ -1,33 +1,24 @@
+import 'dart:convert';
 import '../models/review_model.dart';
 import 'api_client.dart';
 
-abstract class ReviewService {
-  Future<List<ReviewModel>> getRestaurantReviews(int restaurantId);
-  Future<List<ReviewModel>> getMyReviews();
-  Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment);
-  Future<void> deleteReview(int reviewId);
-}
-
-class HttpReviewService implements ReviewService {
-  final ApiClient _api;
-
-  HttpReviewService(this._api);
-
-  @override
-  Future<List<ReviewModel>> getRestaurantReviews(int restaurantId) async {
-    final data = _api.decode(await _api.get('/reviews/restaurant/$restaurantId'));
+class ReviewService {
+  static Future<List<ReviewModel>> getRestaurantReviews(int restaurantId) async {
+    final response = await ApiClient.get('/reviews/restaurant/$restaurantId');
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return (data['reviews'] as List).map((e) => ReviewModel.fromJson(e)).toList();
   }
 
-  @override
-  Future<List<ReviewModel>> getMyReviews() async {
-    final data = _api.decode(await _api.get('/reviews/me'));
+  static Future<List<ReviewModel>> getMyReviews() async {
+    final response = await ApiClient.get('/reviews/me');
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return (data['reviews'] as List).map((e) => ReviewModel.fromJson(e)).toList();
   }
 
-  @override
-  Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment) async {
-    final data = _api.decode(await _api.post(
+  static Future<ReviewModel> createReview(int restaurantId, int food, int service, int atmosphere, String? comment) async {
+    final response = await ApiClient.post(
       '/reviews/',
       body: {
         'id_restaurant': restaurantId,
@@ -36,12 +27,14 @@ class HttpReviewService implements ReviewService {
         'rating_atmosphere': atmosphere,
         'comment': comment,
       },
-    ));
+    );
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return ReviewModel.fromJson(data['review']);
   }
 
-  @override
-  Future<void> deleteReview(int reviewId) async {
-    _api.check(await _api.delete('/reviews/$reviewId'));
+  static Future<void> deleteReview(int reviewId) async {
+    final response = await ApiClient.delete('/reviews/$reviewId');
+    ApiClient.handleResponse(response);
   }
 }

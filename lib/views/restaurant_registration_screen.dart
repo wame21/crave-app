@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'restaurant_profile_screen.dart';
 import '../services/auth_service.dart';
-import '../di.dart';
 
 class RestaurantRegistrationScreen extends StatefulWidget {
   const RestaurantRegistrationScreen({super.key});
@@ -49,7 +48,7 @@ class _RestaurantRegistrationScreenState extends State<RestaurantRegistrationScr
     });
 
     try {
-      await getIt<AuthService>().registerOwner(ownerName, email, password, confirmPassword, restaurantName, _selectedCategory!);
+      await AuthService.registerOwner(ownerName, email, password, confirmPassword, restaurantName, _selectedCategory!);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,

@@ -1,31 +1,24 @@
+import 'dart:convert';
 import '../models/favorite_model.dart';
 import 'api_client.dart';
 
-abstract class FavoritesService {
-  Future<List<FavoriteModel>> getMyFavorites();
-  Future<FavoriteModel> addFavorite(int restaurantId);
-  Future<void> removeFavorite(int restaurantId);
-}
-
-class HttpFavoritesService implements FavoritesService {
-  final ApiClient _api;
-
-  HttpFavoritesService(this._api);
-
-  @override
-  Future<List<FavoriteModel>> getMyFavorites() async {
-    final data = _api.decode(await _api.get('/favorites/'));
+class FavoritesService {
+  static Future<List<FavoriteModel>> getMyFavorites() async {
+    final response = await ApiClient.get('/favorites/');
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return (data['favorites'] as List).map((e) => FavoriteModel.fromJson(e)).toList();
   }
 
-  @override
-  Future<FavoriteModel> addFavorite(int restaurantId) async {
-    final data = _api.decode(await _api.post('/favorites/$restaurantId'));
+  static Future<FavoriteModel> addFavorite(int restaurantId) async {
+    final response = await ApiClient.post('/favorites/$restaurantId');
+    ApiClient.handleResponse(response);
+    final data = jsonDecode(response.body);
     return FavoriteModel.fromJson(data['favorite']);
   }
 
-  @override
-  Future<void> removeFavorite(int restaurantId) async {
-    _api.check(await _api.delete('/favorites/$restaurantId'));
+  static Future<void> removeFavorite(int restaurantId) async {
+    final response = await ApiClient.delete('/favorites/$restaurantId');
+    ApiClient.handleResponse(response);
   }
 }

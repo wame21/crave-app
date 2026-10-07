@@ -9,7 +9,6 @@ import '../models/favorite_model.dart';
 import '../services/restaurant_service.dart';
 import '../services/review_service.dart';
 import '../services/favorites_service.dart';
-import '../di.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   final int restaurantId;
@@ -40,9 +39,9 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     });
 
     try {
-      final restaurantFuture = getIt<RestaurantService>().getRestaurant(widget.restaurantId);
-      final reviewsFuture = getIt<ReviewService>().getRestaurantReviews(widget.restaurantId);
-      final favoritesFuture = getIt<FavoritesService>().getMyFavorites();
+      final restaurantFuture = RestaurantService.getRestaurant(widget.restaurantId);
+      final reviewsFuture = ReviewService.getRestaurantReviews(widget.restaurantId);
+      final favoritesFuture = FavoritesService.getMyFavorites();
 
       final results = await Future.wait([restaurantFuture, reviewsFuture, favoritesFuture]);
 
@@ -66,10 +65,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   Future<void> _toggleFavorite() async {
     try {
       if (_isFavorite) {
-        await getIt<FavoritesService>().removeFavorite(widget.restaurantId);
+        await FavoritesService.removeFavorite(widget.restaurantId);
         setState(() => _isFavorite = false);
       } else {
-        await getIt<FavoritesService>().addFavorite(widget.restaurantId);
+        await FavoritesService.addFavorite(widget.restaurantId);
         setState(() => _isFavorite = true);
       }
     } catch (e) {
