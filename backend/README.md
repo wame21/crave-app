@@ -11,7 +11,17 @@ Ya está listo el kit común sobre el que se construyen los servicios (Ola 1):
 - **Contratos entre servicios** (`contracts/`): interfaces que cada servicio implementa y los demás consumen.
 - **Esquema y datos de prueba** en `db/init/`, en la raíz del repo.
 
-Los endpoints de negocio (auth, restaurantes, reseñas, favoritos, genio) se reescriben como servicios en la Ola 2 (issues [#20](https://github.com/wame21/crave-app/issues/20)–[#24](https://github.com/wame21/crave-app/issues/24)). Hasta entonces la API solo responde `/` y `/health`. `routers/`, `schemas/` y `utils/password.py` son código de la versión anterior y no se montan; sirven de referencia para la Ola 2.
+Sobre ese kit, la Ola 2 (issues [#20](https://github.com/wame21/crave-app/issues/20)–[#24](https://github.com/wame21/crave-app/issues/24)) implementó un servicio por dominio en `services/`: Identity, Catalog, Reviews, Favorites y Genie. Cada uno es dueño de su esquema de PostgreSQL y usa los datos de los demás solo a través de `contracts/`.
+
+| Servicio | Rutas (bajo `/api/v1`) | Esquema |
+|---|---|---|
+| Identity | `POST /auth/login`, `POST /auth/register/client`, `POST /auth/register/owner`, `GET`/`PUT /users/me` | `identity` |
+| Catalog | `GET /restaurants`, `GET /restaurants/categories`, `GET /restaurants/me`, `GET`/`PUT /restaurants/{id}` | `catalog` |
+| Reviews | `GET /reviews/restaurant/{id}`, `GET /reviews/me`, `POST /reviews`, `DELETE /reviews/{id}` | `reviews` |
+| Favorites | `GET /favorites`, `GET`/`POST`/`DELETE /favorites/{restaurant_id}` | `favorites` |
+| Genie | `POST /genie/chat` | — |
+
+La lista completa, con los cuerpos y los errores de cada ruta, está en `/docs`.
 
 ## Estructura
 
@@ -25,9 +35,8 @@ backend/
 │   ├── pagination.py    # Page[T] y PageParams
 │   └── security.py      # JWT, get_current_user, get_optional_user, require_role
 ├── contracts/           # CatalogContract, IdentityContract y su registro
-├── services/            # Un paquete por servicio (Ola 2)
+├── services/<dominio>/  # router, schemas, service, repository (y provider si implementa un contrato) + tests/
 ├── tests/               # Pruebas del kit; fakes.py tiene FakeCatalog y FakeIdentity
-├── routers/ schemas/ utils/   # Versión anterior, sin montar
 ├── requirements.txt
 └── .env.example         # Plantilla de backend/.env (que no se versiona)
 ```
