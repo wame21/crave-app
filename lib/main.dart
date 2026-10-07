@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import '../components/responsive_layout.dart';
+import 'views/home_screen.dart';
+import 'views/login_screen.dart';
+import 'components/responsive_layout.dart';
+import 'services/auth_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final bool isLoggedIn = await AuthService.isLoggedIn();
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -18,11 +24,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
       ),
-
       builder: (context, child) {
-        return ResponsiveLayout(child: child!);
+        return ResponsiveLayout(
+          child: child!,
+        );
       },
-      home: const LoginScreen(),
+      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

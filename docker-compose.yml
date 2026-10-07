@@ -1,0 +1,25 @@
+name: crave-app
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: crave-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crave_db}
+      POSTGRES_USER: ${POSTGRES_USER:-crave}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crave_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - crave_pgdata:/var/lib/postgresql/data
+      # Los .sql de esta carpeta se ejecutan solo al crear el volumen por primera vez
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  crave_pgdata:
