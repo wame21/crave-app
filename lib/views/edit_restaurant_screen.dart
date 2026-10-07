@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import '../models/restaurant_model.dart';
 import '../services/restaurant_service.dart';
+import '../di.dart';
 
 class EditRestaurantScreen extends StatefulWidget {
   const EditRestaurantScreen({super.key});
@@ -40,7 +41,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
     });
 
     try {
-      final restaurant = await RestaurantService.getMyRestaurant();
+      final restaurant = await getIt<RestaurantService>().getMyRestaurant();
       setState(() {
         _restaurant = restaurant;
         _nameController.text = restaurant.name;
@@ -93,7 +94,7 @@ class _EditRestaurantScreenState extends State<EditRestaurantScreen> {
         'facebook': _facebookController.text.trim(),
       });
 
-      await RestaurantService.updateRestaurant(_restaurant!.idRestaurant, {
+      await getIt<RestaurantService>().updateRestaurant(_restaurant!.idRestaurant, {
         'name': name,
         'phone': _phoneController.text.trim(),
         'address': _addressController.text.trim(),

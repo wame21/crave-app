@@ -3,6 +3,7 @@ import '../models/review_model.dart';
 import '../models/restaurant_model.dart';
 import '../services/restaurant_service.dart';
 import '../services/review_service.dart';
+import '../di.dart';
 
 class AllReviewsScreen extends StatefulWidget {
   final int restaurantId;
@@ -32,8 +33,8 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
     });
 
     try {
-      final restaurantFuture = RestaurantService.getRestaurant(widget.restaurantId);
-      final reviewsFuture = ReviewService.getRestaurantReviews(widget.restaurantId);
+      final restaurantFuture = getIt<RestaurantService>().getRestaurant(widget.restaurantId);
+      final reviewsFuture = getIt<ReviewService>().getRestaurantReviews(widget.restaurantId);
 
       final results = await Future.wait([restaurantFuture, reviewsFuture]);
 

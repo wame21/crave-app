@@ -4,6 +4,7 @@ import '../models/favorite_model.dart';
 import '../models/user_model.dart';
 import '../services/favorites_service.dart';
 import '../services/user_service.dart';
+import '../di.dart';
 import 'restaurant_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -33,8 +34,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
 
     try {
-      final profileFuture = UserService.getMyProfile();
-      final favoritesFuture = FavoritesService.getMyFavorites();
+      final profileFuture = getIt<UserService>().getMyProfile();
+      final favoritesFuture = getIt<FavoritesService>().getMyFavorites();
 
       final results = await Future.wait([profileFuture, favoritesFuture]);
 

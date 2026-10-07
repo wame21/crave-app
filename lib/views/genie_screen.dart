@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
 import '../services/genie_service.dart';
+import '../di.dart';
 import '../models/restaurant_model.dart';
 import 'restaurant_detail_screen.dart';
 
@@ -39,7 +40,7 @@ class _GenieScreenState extends State<GenieScreen> {
     _scrollToBottom();
 
     try {
-      final response = await GenieService.chat(text);
+      final response = await getIt<GenieService>().chat(text);
       setState(() {
         _messages.add(ChatMessage(
           text: response.reply,

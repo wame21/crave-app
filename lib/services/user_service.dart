@@ -1,17 +1,23 @@
-import 'dart:convert';
 import '../models/user_model.dart';
 import 'api_client.dart';
 
-class UserService {
-  static Future<UserModel> getMyProfile() async {
-    final response = await ApiClient.get('/users/me');
-    ApiClient.handleResponse(response);
-    return UserModel.fromJson(jsonDecode(response.body));
+abstract class UserService {
+  Future<UserModel> getMyProfile();
+  Future<UserModel> updateProfile(Map<String, dynamic> data);
+}
+
+class HttpUserService implements UserService {
+  final ApiClient _api;
+
+  HttpUserService(this._api);
+
+  @override
+  Future<UserModel> getMyProfile() async {
+    return UserModel.fromJson(_api.decode(await _api.get('/users/me')));
   }
 
-  static Future<UserModel> updateProfile(Map<String, dynamic> data) async {
-    final response = await ApiClient.put('/users/me', body: data);
-    ApiClient.handleResponse(response);
-    return UserModel.fromJson(jsonDecode(response.body));
+  @override
+  Future<UserModel> updateProfile(Map<String, dynamic> data) async {
+    return UserModel.fromJson(_api.decode(await _api.put('/users/me', body: data)));
   }
 }

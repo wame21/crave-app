@@ -91,7 +91,13 @@ flutter pub get
 flutter run                        # o: flutter run -d chrome / -d linux
 ```
 
-La URL del backend está en `lib/services/api_client.dart` (`baseUrl`). Por defecto es `http://10.0.2.2:8000/api`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS, cámbiala a `http://localhost:8000/api`; en un teléfono físico, usa la IP de tu máquina en la red local. [#19](https://github.com/wame21/crave-app/issues/19) la vuelve configurable.
+La URL del backend se elige al compilar con `API_BASE_URL` (ver `lib/di.dart`). Por defecto es `http://10.0.2.2:8000/api`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:8000/api
+```
+
+En un teléfono físico, usa la IP de tu máquina en la red local. Para Flutter web, agrega además el origen de la app a `CORS_ORIGINS` en `backend/.env`.
 
 ## Verificación
 
