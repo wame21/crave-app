@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/page_model.dart';
 import '../models/review_model.dart';
 import '../models/restaurant_model.dart';
 import '../services/restaurant_service.dart';
@@ -39,7 +40,7 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
       final results = await Future.wait([restaurantFuture, reviewsFuture]);
 
       _restaurant = results[0] as RestaurantModel;
-      _reviews = results[1] as List<ReviewModel>;
+      _reviews = (results[1] as PageModel<ReviewModel>).items;
 
       setState(() {
         _isLoading = false;
