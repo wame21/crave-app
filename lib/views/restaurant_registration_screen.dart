@@ -158,7 +158,7 @@ class _RestaurantRegistrationScreenState extends State<RestaurantRegistrationScr
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _selectedCategory,
+                value: _selectedCategory,
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,

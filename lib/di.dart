@@ -10,14 +10,14 @@ import 'services/review_service.dart';
 import 'services/token_store.dart';
 import 'services/user_service.dart';
 
-/// URL base de la API (versión 1). Se elige al compilar, por ejemplo:
+/// URL base de la API. Se elige al compilar, por ejemplo:
 ///
-///     flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1
+///     flutter run --dart-define=API_BASE_URL=http://localhost:8000/api
 ///
 /// Por defecto es el `localhost` de la máquina visto desde el emulador de Android.
 const String apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:8000/api/v1',
+  defaultValue: 'http://10.0.2.2:8000/api',
 );
 
 /// Contenedor de dependencias. Las vistas obtienen los servicios con
@@ -25,19 +25,12 @@ const String apiBaseUrl = String.fromEnvironment(
 final GetIt getIt = GetIt.instance;
 
 /// Registra el cliente de la API y los servicios HTTP. Se llama una vez en `main`.
-///
-/// Si la API rechaza el token guardado (401), se borra la sesión y se llama a
-/// [onSessionExpired] (la app lleva al login).
-void setupDependencies({String baseUrl = apiBaseUrl, Future<void> Function()? onSessionExpired}) {
+void setupDependencies({String baseUrl = apiBaseUrl}) {
   final tokenStore = SharedPrefsTokenStore();
   final api = ApiClient(
     baseUrl: baseUrl,
     httpClient: http.Client(),
     tokenStore: tokenStore,
-    onUnauthorized: () async {
-      await tokenStore.clear();
-      await onSessionExpired?.call();
-    },
   );
 
   getIt

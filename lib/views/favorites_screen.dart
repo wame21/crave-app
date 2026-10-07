@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../components/custom_bottom_nav.dart';
 import '../models/favorite_model.dart';
-import '../models/page_model.dart';
 import '../models/user_model.dart';
 import '../services/favorites_service.dart';
 import '../services/user_service.dart';
@@ -42,7 +41,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
       setState(() {
         _profile = results[0] as UserModel;
-        _favorites = (results[1] as PageModel<FavoriteModel>).items;
+        _favorites = results[1] as List<FavoriteModel>;
         _isLoading = false;
       });
     } catch (e) {
@@ -106,7 +105,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
-                                    (_profile?.profileName.isNotEmpty ?? false) ? _profile!.profileName[0].toUpperCase() : 'U',
+                                    _profile?.profileName?.isNotEmpty == true ? _profile!.profileName![0].toUpperCase() : 'U',
                                     style: const TextStyle(fontSize: 50, color: Colors.black54, fontWeight: FontWeight.bold),
                                   ),
                                 ),
@@ -154,7 +153,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                   
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 24.0),
-                                    child: _buildFavoriteItem(context, favorite, color.withValues(alpha: 0.2), color),
+                                    child: _buildFavoriteItem(context, favorite, color.withOpacity(0.2), color),
                                   );
                                 },
                               ),
