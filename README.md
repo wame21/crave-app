@@ -2,7 +2,7 @@
 
 App para descubrir y reseñar restaurantes: cliente **Flutter** + backend **FastAPI** + **PostgreSQL**.
 
-El proyecto se está migrando a una arquitectura orientada a servicios (SOA) por olas; el plan está en la issue [#14](https://github.com/wame21/crave-app/issues/14).
+El proyecto sigue una arquitectura orientada a servicios (SOA): ver [docs/arquitectura-soa.md](docs/arquitectura-soa.md). El plan de la migración está en la issue [#14](https://github.com/wame21/crave-app/issues/14).
 
 ## Estructura
 
@@ -10,6 +10,7 @@ El proyecto se está migrando a una arquitectura orientada a servicios (SOA) por
 .
 ├── backend/              # API FastAPI (ver backend/README.md)
 ├── db/init/              # Scripts .sql que Postgres ejecuta al crear el volumen
+├── docs/                 # Arquitectura SOA y contrato OpenAPI publicado
 ├── docker-compose.yml    # PostgreSQL 17 para desarrollo local
 ├── lib/                  # App Flutter
 │   ├── components/
@@ -82,7 +83,7 @@ Las demás variables (`DATABASE_URL`, `CORS_ORIGINS`, `GEMINI_API_KEY`, …) est
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-> **Estado actual:** la API ya está dividida en servicios bajo `/api/v1` (Identity, Catalog, Reviews, Favorites y Genie; ver [backend/README.md](backend/README.md)). La app Flutter todavía llama a las rutas anteriores (`/api/...`) y se alineará con `/api/v1` en [#26](https://github.com/wame21/crave-app/issues/26).
+La API está dividida en servicios bajo `/api/v1` (Identity, Catalog, Reviews, Favorites, Genie y el BFF de las pantallas); ver [backend/README.md](backend/README.md) y [docs/arquitectura-soa.md](docs/arquitectura-soa.md).
 
 ## 3. App (Flutter)
 
@@ -91,10 +92,10 @@ flutter pub get
 flutter run                        # o: flutter run -d chrome / -d linux
 ```
 
-La URL del backend se elige al compilar con `API_BASE_URL` (ver `lib/di.dart`). Por defecto es `http://10.0.2.2:8000/api`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS:
+La URL del backend se elige al compilar con `API_BASE_URL` (ver `lib/di.dart`). Por defecto es `http://10.0.2.2:8000/api/v1`, que es como el emulador de Android llega al `localhost` de la máquina. Para web, escritorio o simulador de iOS:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:8000/api
+flutter run --dart-define=API_BASE_URL=http://localhost:8000/api/v1
 ```
 
 En un teléfono físico, usa la IP de tu máquina en la red local. Para Flutter web, agrega además el origen de la app a `CORS_ORIGINS` en `backend/.env`.

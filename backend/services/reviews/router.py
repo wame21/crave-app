@@ -43,7 +43,7 @@ router = APIRouter(prefix="/reviews", tags=["Reseñas"])
 
 
 @router.get(
-    "/restaurant/{restaurant_id}",
+    "/restaurant/{restaurant_id:int}",
     response_model=Page[ReviewResponse],
     summary="Reseñas aprobadas de un restaurante",
     responses=_errors(404),
@@ -91,7 +91,7 @@ def create_review(
 
 
 @router.delete(
-    "/{review_id}",
+    "/{review_id:int}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Eliminar una reseña propia",

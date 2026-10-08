@@ -20,6 +20,7 @@ Sobre ese kit, la Ola 2 (issues [#20](https://github.com/wame21/crave-app/issues
 | Reviews | `GET /reviews/restaurant/{id}`, `GET /reviews/me`, `POST /reviews`, `DELETE /reviews/{id}` | `reviews` |
 | Favorites | `GET /favorites`, `GET`/`POST`/`DELETE /favorites/{restaurant_id}` | `favorites` |
 | Genie | `POST /genie/chat` | — |
+| BFF | `GET /bff/home`, `GET /bff/restaurants/{id}` (pantallas de la app) | — |
 
 La lista completa, con los cuerpos y los errores de cada ruta, está en `/docs`.
 
@@ -97,6 +98,12 @@ Los errores de validación (422) agregan `details` con el campo y el motivo. Los
 3. Lanza las excepciones de `core.errors` (`NotFoundError`, `ConflictError`, …) en lugar de `HTTPException`.
 4. Protege rutas con `Depends(get_current_user)` o `Depends(require_role("Owner"))`.
 5. Para datos de otro servicio, usa su contrato (`Depends(get_catalog)`, `Depends(get_identity)`), nunca sus tablas. En las pruebas, sustitúyelo con `app.dependency_overrides` y los fakes de `tests/fakes.py`.
+
+## Contrato publicado
+
+El OpenAPI de la API v1 está versionado en [`docs/contracts/openapi-v1.json`](../docs/contracts/openapi-v1.json). Si cambias rutas, cuerpos o errores, regenéralo con `python scripts/export_openapi.py`; `tests/contract/test_openapi.py` falla si quedó desactualizado. `tests/contract/test_schemathesis.py` genera peticiones a partir del contrato y comprueba que las respuestas lo cumplan.
+
+La arquitectura (servicios, dueños de los datos, contratos, saga y principios SOA) está en [`docs/arquitectura-soa.md`](../docs/arquitectura-soa.md).
 
 ## Pruebas
 

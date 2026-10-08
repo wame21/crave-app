@@ -18,6 +18,8 @@ T = TypeVar("T")
 
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 100
+# Tope de offset: sin él, un número enorme desborda el bigint de PostgreSQL (500).
+MAX_OFFSET = 2**31 - 1
 
 
 class PageParams:
@@ -28,7 +30,7 @@ class PageParams:
         limit: int = Query(
             DEFAULT_LIMIT, ge=1, le=MAX_LIMIT, description="Elementos por página"
         ),
-        offset: int = Query(0, ge=0, description="Elementos a saltar"),
+        offset: int = Query(0, ge=0, le=MAX_OFFSET, description="Elementos a saltar"),
     ):
         self.limit = limit
         self.offset = offset

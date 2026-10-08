@@ -1,0 +1,3340 @@
+{
+  "components": {
+    "schemas": {
+      "CategoriesResponse": {
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          }
+        },
+        "required": [
+          "categories"
+        ],
+        "title": "CategoriesResponse",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "description": "El antojo del usuario",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
+      "ChatResponse": {
+        "properties": {
+          "reply": {
+            "title": "Reply",
+            "type": "string"
+          },
+          "restaurant_suggestions": {
+            "description": "Hasta 3 restaurantes relacionados con el antojo",
+            "items": {
+              "$ref": "#/components/schemas/RestaurantSummary"
+            },
+            "title": "Restaurant Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reply",
+          "restaurant_suggestions"
+        ],
+        "title": "ChatResponse",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "Detalle de un campo inválido (solo en errores de validación).",
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FavoriteResponse": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food Type"
+          },
+          "id_client": {
+            "title": "Id Client",
+            "type": "integer"
+          },
+          "id_favorite": {
+            "title": "Id Favorite",
+            "type": "integer"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "overall_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Rating"
+          },
+          "restaurant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Del servicio Catalog",
+            "title": "Restaurant Name"
+          }
+        },
+        "required": [
+          "id_favorite",
+          "id_client",
+          "id_restaurant",
+          "created_at"
+        ],
+        "title": "FavoriteResponse",
+        "type": "object"
+      },
+      "FavoriteStatus": {
+        "properties": {
+          "is_favorite": {
+            "title": "Is Favorite",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "is_favorite"
+        ],
+        "title": "FavoriteStatus",
+        "type": "object"
+      },
+      "HomeResponse": {
+        "properties": {
+          "featured": {
+            "description": "Los 5 mejor calificados (carrusel)",
+            "items": {
+              "$ref": "#/components/schemas/RestaurantCard"
+            },
+            "title": "Featured",
+            "type": "array"
+          },
+          "newest": {
+            "description": "Los 10 más recientes",
+            "items": {
+              "$ref": "#/components/schemas/RestaurantCard"
+            },
+            "title": "Newest",
+            "type": "array"
+          },
+          "recommended": {
+            "description": "El mejor calificado de cada categoría, hasta 10",
+            "items": {
+              "$ref": "#/components/schemas/RestaurantCard"
+            },
+            "title": "Recommended",
+            "type": "array"
+          },
+          "top_rated": {
+            "description": "Los 10 mejor calificados",
+            "items": {
+              "$ref": "#/components/schemas/RestaurantCard"
+            },
+            "title": "Top Rated",
+            "type": "array"
+          },
+          "warnings": {
+            "description": "Secciones que no se pudieron cargar",
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "featured",
+          "top_rated",
+          "recommended",
+          "newest"
+        ],
+        "title": "HomeResponse",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "Page_FavoriteResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FavoriteResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[FavoriteResponse]",
+        "type": "object"
+      },
+      "Page_RestaurantSummary_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RestaurantSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[RestaurantSummary]",
+        "type": "object"
+      },
+      "Page_ReviewItem_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[ReviewItem]",
+        "type": "object"
+      },
+      "Page_ReviewResponse_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "minimum": 0.0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "Page[ReviewResponse]",
+        "type": "object"
+      },
+      "RegisterClientRequest": {
+        "properties": {
+          "confirm_password": {
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          },
+          "profile_name": {
+            "minLength": 1,
+            "title": "Profile Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_name",
+          "email",
+          "password",
+          "confirm_password"
+        ],
+        "title": "RegisterClientRequest",
+        "type": "object"
+      },
+      "RegisterOwnerRequest": {
+        "properties": {
+          "confirm_password": {
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "food_type": {
+            "description": "Categoría principal, p. ej. \"Tacos\"",
+            "minLength": 1,
+            "title": "Food Type",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          },
+          "profile_name": {
+            "minLength": 1,
+            "title": "Profile Name",
+            "type": "string"
+          },
+          "restaurant_name": {
+            "description": "Nombre del restaurante",
+            "minLength": 1,
+            "title": "Restaurant Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_name",
+          "email",
+          "password",
+          "confirm_password",
+          "restaurant_name",
+          "food_type"
+        ],
+        "title": "RegisterOwnerRequest",
+        "type": "object"
+      },
+      "RestaurantCard": {
+        "description": "Tarjeta de un restaurante en las secciones del Home.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food Type"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "overall_rating": {
+            "title": "Overall Rating",
+            "type": "number"
+          },
+          "price_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Range"
+          }
+        },
+        "required": [
+          "id_restaurant",
+          "name",
+          "overall_rating"
+        ],
+        "title": "RestaurantCard",
+        "type": "object"
+      },
+      "RestaurantDetail": {
+        "description": "Ficha completa de un restaurante.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food Type"
+          },
+          "id_owner": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Owner"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opening_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Hours"
+          },
+          "overall_rating": {
+            "default": 0.0,
+            "title": "Overall Rating",
+            "type": "number"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "price_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Range"
+          },
+          "social_media": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Social Media"
+          }
+        },
+        "required": [
+          "id_restaurant",
+          "name"
+        ],
+        "title": "RestaurantDetail",
+        "type": "object"
+      },
+      "RestaurantInfo": {
+        "description": "Ficha del restaurante en la pantalla de detalle.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food Type"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opening_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Hours"
+          },
+          "overall_rating": {
+            "title": "Overall Rating",
+            "type": "number"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "price_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Range"
+          },
+          "social_media": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Social Media"
+          }
+        },
+        "required": [
+          "id_restaurant",
+          "name",
+          "overall_rating"
+        ],
+        "title": "RestaurantInfo",
+        "type": "object"
+      },
+      "RestaurantScreen": {
+        "properties": {
+          "is_favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null sin sesión o si el servicio de favoritos falló",
+            "title": "Is Favorite"
+          },
+          "restaurant": {
+            "$ref": "#/components/schemas/RestaurantInfo"
+          },
+          "reviews": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Page_ReviewItem_"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null si el servicio de reseñas falló"
+          },
+          "warnings": {
+            "description": "Partes que no se pudieron cargar",
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "restaurant",
+          "reviews",
+          "is_favorite"
+        ],
+        "title": "RestaurantScreen",
+        "type": "object"
+      },
+      "RestaurantSummary": {
+        "description": "Vista resumida de un restaurante, la que se usa en listas y tarjetas.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Food Type"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "overall_rating": {
+            "default": 0.0,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Overall Rating",
+            "type": "number"
+          },
+          "price_range": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Range"
+          }
+        },
+        "required": [
+          "id_restaurant",
+          "name"
+        ],
+        "title": "RestaurantSummary",
+        "type": "object"
+      },
+      "RestaurantUpdate": {
+        "description": "Solo se actualizan los campos enviados.",
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "food_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Una de las de GET /restaurants/categories",
+            "title": "Food Type"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "maximum": 90.0,
+                "minimum": -90.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "opening_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Hours"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "price_range": {
+            "anyOf": [
+              {
+                "enum": [
+                  "$",
+                  "$$",
+                  "$$$"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Range"
+          },
+          "social_media": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Redes sociales, p. ej. {\"instagram\": \"@crave\"}",
+            "title": "Social Media"
+          }
+        },
+        "title": "RestaurantUpdate",
+        "type": "object"
+      },
+      "ReviewCreate": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "photo_gallery": {
+            "description": "URLs de fotos",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Photo Gallery",
+            "type": "array"
+          },
+          "rating_atmosphere": {
+            "description": "De 1 a 5",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating Atmosphere",
+            "type": "integer"
+          },
+          "rating_food": {
+            "description": "De 1 a 5",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating Food",
+            "type": "integer"
+          },
+          "rating_service": {
+            "description": "De 1 a 5",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating Service",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id_restaurant",
+          "rating_food",
+          "rating_service",
+          "rating_atmosphere"
+        ],
+        "title": "ReviewCreate",
+        "type": "object"
+      },
+      "ReviewItem": {
+        "description": "Reseña tal como se muestra en el detalle.",
+        "properties": {
+          "author_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "author_photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Photo"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id_review": {
+            "title": "Id Review",
+            "type": "integer"
+          },
+          "photo_gallery": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Photo Gallery",
+            "type": "array"
+          },
+          "rating_atmosphere": {
+            "title": "Rating Atmosphere",
+            "type": "integer"
+          },
+          "rating_average": {
+            "description": "Promedio de comida, servicio y ambiente",
+            "title": "Rating Average",
+            "type": "number"
+          },
+          "rating_food": {
+            "title": "Rating Food",
+            "type": "integer"
+          },
+          "rating_service": {
+            "title": "Rating Service",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id_review",
+          "rating_food",
+          "rating_service",
+          "rating_atmosphere",
+          "rating_average",
+          "created_at"
+        ],
+        "title": "ReviewItem",
+        "type": "object"
+      },
+      "ReviewResponse": {
+        "properties": {
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Del servicio Identity",
+            "title": "Client Name"
+          },
+          "client_photo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Del servicio Identity",
+            "title": "Client Photo"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id_client": {
+            "title": "Id Client",
+            "type": "integer"
+          },
+          "id_restaurant": {
+            "title": "Id Restaurant",
+            "type": "integer"
+          },
+          "id_review": {
+            "title": "Id Review",
+            "type": "integer"
+          },
+          "photo_gallery": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Photo Gallery",
+            "type": "array"
+          },
+          "rating_atmosphere": {
+            "title": "Rating Atmosphere",
+            "type": "integer"
+          },
+          "rating_food": {
+            "title": "Rating Food",
+            "type": "integer"
+          },
+          "rating_service": {
+            "title": "Rating Service",
+            "type": "integer"
+          },
+          "restaurant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Del servicio Catalog",
+            "title": "Restaurant Name"
+          },
+          "status": {
+            "enum": [
+              "Pending",
+              "Approved",
+              "Rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_review",
+          "id_client",
+          "id_restaurant",
+          "rating_food",
+          "rating_service",
+          "rating_atmosphere",
+          "status",
+          "created_at"
+        ],
+        "title": "ReviewResponse",
+        "type": "object"
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "profile_name": {
+            "title": "Profile Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "Client",
+              "Owner"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "token_type": {
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "access_token",
+          "user_id",
+          "role",
+          "profile_name"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
+      "UpdateProfileRequest": {
+        "description": "Solo se actualizan los campos enviados.",
+        "properties": {
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          }
+        },
+        "title": "UpdateProfileRequest",
+        "type": "object"
+      },
+      "UserProfile": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id_user": {
+            "title": "Id User",
+            "type": "integer"
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          },
+          "profile_name": {
+            "title": "Profile Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "Client",
+              "Owner"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id_user",
+          "profile_name",
+          "email",
+          "role"
+        ],
+        "title": "UserProfile",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "dev@crave-app.com",
+      "name": "Equipo Crave"
+    },
+    "description": "Backend de **Crave**, la app para descubrir y reseñar restaurantes. \n\n## Autenticación\nLos endpoints protegidos requieren un header:\n`Authorization: Bearer <tu_token_jwt>`\n\nObten tu token haciendo `POST /api/v1/auth/login`.\n\n## Errores\nTodos los errores responden `{\"error\": {\"code\": \"...\", \"message\": \"...\"}}`.",
+    "title": "Crave App API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Verifica que el servidor está corriendo.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Root",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Autentica a un cliente o dueño y devuelve su JWT. Un correo inexistente y\nuna contraseña incorrecta responden el mismo 401.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Credenciales o token inválidos"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Iniciar sesión",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/v1/auth/register/client": {
+      "post": {
+        "description": "Registra un usuario con rol Client y devuelve su JWT.",
+        "operationId": "register_client_api_v1_auth_register_client_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El correo ya está registrado o el dueño ya tiene restaurante"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Registrar cliente",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/v1/auth/register/owner": {
+      "post": {
+        "description": "Registra un usuario Owner y pide a Catalog que cree su restaurante. Si\nCatalog falla, el usuario se borra (compensación de la saga) y la\nrespuesta es el error de Catalog.",
+        "operationId": "register_owner_api_v1_auth_register_owner_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterOwnerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El correo ya está registrado o el dueño ya tiene restaurante"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Registrar dueño y su restaurante",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/v1/bff/home": {
+      "get": {
+        "description": "Destacados, mejor calificados, recomendados (uno por categoría) y novedades, en una sola llamada.",
+        "operationId": "home_api_v1_bff_home_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Pantalla de inicio",
+        "tags": [
+          "BFF (pantallas de la app)"
+        ]
+      }
+    },
+    "/api/v1/bff/restaurants/{restaurant_id}": {
+      "get": {
+        "description": "Restaurante, página de reseñas (`limit`/`offset`) y, si hay sesión, si es\nfavorito, en una sola llamada. Si fallan las reseñas o los favoritos, la\nrespuesta es 200 con `warnings`.",
+        "operationId": "restaurant_screen_api_v1_bff_restaurants__restaurant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos por página",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Elementos por página",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos a saltar",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Elementos a saltar",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantScreen"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Se envió un token inválido"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {}
+        ],
+        "summary": "Pantalla de detalle de un restaurante",
+        "tags": [
+          "BFF (pantallas de la app)"
+        ]
+      }
+    },
+    "/api/v1/favorites": {
+      "get": {
+        "description": "Del más reciente al más antiguo. Se omiten los restaurantes que ya no existen.",
+        "operationId": "get_my_favorites_api_v1_favorites_get",
+        "parameters": [
+          {
+            "description": "Elementos por página",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Elementos por página",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos a saltar",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Elementos a saltar",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_FavoriteResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mis restaurantes favoritos",
+        "tags": [
+          "Favoritos"
+        ]
+      }
+    },
+    "/api/v1/favorites/{restaurant_id}": {
+      "delete": {
+        "operationId": "remove_favorite_api_v1_favorites__restaurant_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El restaurante no existe o no era favorito"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quitar de favoritos",
+        "tags": [
+          "Favoritos"
+        ]
+      },
+      "get": {
+        "description": "Para pintar el corazón del detalle sin descargar la lista completa.",
+        "operationId": "get_favorite_status_api_v1_favorites__restaurant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoriteStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El restaurante no existe o no era favorito"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "¿Es favorito este restaurante?",
+        "tags": [
+          "Favoritos"
+        ]
+      },
+      "post": {
+        "operationId": "add_favorite_api_v1_favorites__restaurant_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FavoriteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El restaurante no existe o no era favorito"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El restaurante ya está en favoritos"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Agregar a favoritos",
+        "tags": [
+          "Favoritos"
+        ]
+      }
+    },
+    "/api/v1/genie/chat": {
+      "post": {
+        "description": "Recomienda restaurantes según el antojo del usuario (máximo 500 caracteres).\n\nUsa Google Gemini si hay `GEMINI_API_KEY`. Sin clave, o si Gemini falla,\nresponde con recomendaciones por palabras clave: el endpoint siempre funciona.",
+        "operationId": "chat_api_v1_genie_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Chatear con el Genio",
+        "tags": [
+          "Genio de los Antojos"
+        ]
+      }
+    },
+    "/api/v1/restaurants": {
+      "get": {
+        "description": "Restaurantes activos. `total` es el número de resultados del filtro, no el tamaño de la página.",
+        "operationId": "list_restaurants_api_v1_restaurants_get",
+        "parameters": [
+          {
+            "description": "Texto a buscar en el nombre o el tipo de comida",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Texto a buscar en el nombre o el tipo de comida",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Categoría exacta (ver /restaurants/categories)",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Categoría exacta (ver /restaurants/categories)",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "`rating`: mejor calificados primero; `new`: más recientes primero",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "rating",
+              "description": "`rating`: mejor calificados primero; `new`: más recientes primero",
+              "enum": [
+                "rating",
+                "new"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Elementos por página",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Elementos por página",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos a saltar",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Elementos a saltar",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_RestaurantSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Listar y buscar restaurantes",
+        "tags": [
+          "Restaurantes"
+        ]
+      }
+    },
+    "/api/v1/restaurants/categories": {
+      "get": {
+        "operationId": "get_categories_api_v1_restaurants_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Listar categorías de comida",
+        "tags": [
+          "Restaurantes"
+        ]
+      }
+    },
+    "/api/v1/restaurants/me": {
+      "get": {
+        "operationId": "get_my_restaurant_api_v1_restaurants_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Requiere el rol Owner, o el restaurante es de otro dueño"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mi restaurante (Owner)",
+        "tags": [
+          "Restaurantes"
+        ]
+      }
+    },
+    "/api/v1/restaurants/{restaurant_id}": {
+      "get": {
+        "operationId": "get_restaurant_api_v1_restaurants__restaurant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Detalle de un restaurante",
+        "tags": [
+          "Restaurantes"
+        ]
+      },
+      "put": {
+        "description": "Solo el dueño del restaurante puede editarlo; solo se cambian los campos enviados.",
+        "operationId": "update_restaurant_api_v1_restaurants__restaurant_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestaurantUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestaurantDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Requiere el rol Owner, o el restaurante es de otro dueño"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Editar mi restaurante (Owner)",
+        "tags": [
+          "Restaurantes"
+        ]
+      }
+    },
+    "/api/v1/reviews": {
+      "post": {
+        "description": "Publica una reseña y actualiza la calificación del restaurante en Catalog.\n\nEl estado inicial lo fija `REVIEW_DEFAULT_STATUS`: `Approved` (por defecto)\no `Pending` si las reseñas pasan por moderación. Solo las aprobadas se\nmuestran en el restaurante y cuentan para su calificación. Cada cliente\npuede reseñar un restaurante una sola vez.",
+        "operationId": "create_review_api_v1_reviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Requiere el rol Client, o la reseña es de otro usuario"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante o reseña no encontrados"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cliente ya reseñó este restaurante"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Publicar una reseña (Client)",
+        "tags": [
+          "Reseñas"
+        ]
+      }
+    },
+    "/api/v1/reviews/me": {
+      "get": {
+        "description": "Todas mis reseñas, también las pendientes de moderación, con el nombre del restaurante.",
+        "operationId": "get_my_reviews_api_v1_reviews_me_get",
+        "parameters": [
+          {
+            "description": "Elementos por página",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Elementos por página",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos a saltar",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Elementos a saltar",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ReviewResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Mis reseñas",
+        "tags": [
+          "Reseñas"
+        ]
+      }
+    },
+    "/api/v1/reviews/restaurant/{restaurant_id}": {
+      "get": {
+        "description": "De la más reciente a la más antigua, con el nombre y la foto de cada autor.",
+        "operationId": "get_restaurant_reviews_api_v1_reviews_restaurant__restaurant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos por página",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Elementos por página",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Elementos a saltar",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Elementos a saltar",
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ReviewResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante o reseña no encontrados"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "summary": "Reseñas aprobadas de un restaurante",
+        "tags": [
+          "Reseñas"
+        ]
+      }
+    },
+    "/api/v1/reviews/{review_id}": {
+      "delete": {
+        "description": "Solo el autor puede eliminarla; la calificación del restaurante se recalcula.",
+        "operationId": "delete_review_api_v1_reviews__review_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "title": "Review Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Falta el token o es inválido"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Requiere el rol Client, o la reseña es de otro usuario"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Restaurante o reseña no encontrados"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Eliminar una reseña propia",
+        "tags": [
+          "Reseñas"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "get_my_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Credenciales o token inválidos"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Usuario no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Obtener perfil propio",
+        "tags": [
+          "Usuarios"
+        ]
+      },
+      "put": {
+        "description": "Actualiza el nombre o la foto del usuario autenticado; solo los campos enviados.",
+        "operationId": "update_my_profile_api_v1_users_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Credenciales o token inválidos"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Usuario no encontrado"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Datos de entrada inválidos o regla de negocio incumplida"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error interno del servidor"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Actualizar perfil propio",
+        "tags": [
+          "Usuarios"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Health check para monitoreo.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Check",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  }
+}
