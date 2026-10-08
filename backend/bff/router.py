@@ -51,13 +51,16 @@ def home(service: BffService = Depends(get_bff_service)) -> HomeResponse:
 
 
 @router.get(
-    "/restaurants/{restaurant_id}",
+    "/restaurants/{restaurant_id:int}",
     response_model=RestaurantScreen,
     summary="Pantalla de detalle de un restaurante",
     responses={
         401: {"model": ErrorResponse, "description": "Se envió un token inválido"},
         404: {"model": ErrorResponse, "description": "Restaurante no encontrado"},
     },
+    # La sesión es opcional: sin token también responde (sin is_favorite).
+    # FastAPI ya declara HTTPBearer; el requisito vacío {} lo marca como opcional.
+    openapi_extra={"security": [{}]},
 )
 def restaurant_screen(
     restaurant_id: int,

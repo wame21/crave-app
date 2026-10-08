@@ -44,10 +44,10 @@ def get_my_favorites(
 
 
 @router.get(
-    "/{restaurant_id}",
+    "/{restaurant_id:int}",
     response_model=FavoriteStatus,
     summary="¿Es favorito este restaurante?",
-    responses=_errors(401),
+    responses=_errors(401, 404),
 )
 def get_favorite_status(
     restaurant_id: int,
@@ -59,7 +59,7 @@ def get_favorite_status(
 
 
 @router.post(
-    "/{restaurant_id}",
+    "/{restaurant_id:int}",
     response_model=FavoriteResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Agregar a favoritos",
@@ -74,7 +74,7 @@ def add_favorite(
 
 
 @router.delete(
-    "/{restaurant_id}",
+    "/{restaurant_id:int}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Quitar de favoritos",

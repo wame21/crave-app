@@ -10,7 +10,9 @@ from core.security import Role
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    # Sin validar el formato: el login solo busca el correo, y uno que no
+    # existe (o mal escrito) responde el mismo 401 que una contraseña incorrecta.
+    email: str = Field(min_length=1, max_length=254)
     password: str
 
 

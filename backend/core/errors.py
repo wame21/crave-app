@@ -17,6 +17,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.routing import Match
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,10 @@ class ErrorResponse(BaseModel):
 
 # Respuestas comunes a todas las rutas de /api/v1 (ver main.py).
 COMMON_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_400_BAD_REQUEST: {
+        "model": ErrorResponse,
+        "description": "El cuerpo de la petición no se puede leer (p. ej. no es JSON en UTF-8)",
+    },
     status.HTTP_422_UNPROCESSABLE_CONTENT: {
         "model": ErrorResponse,
         "description": "Datos de entrada inválidos o regla de negocio incumplida",
@@ -168,12 +173,34 @@ async def _validation_error_handler(
     )
 
 
+_HTTP_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE")
+
+
+def _allowed_methods(request: Request) -> Optional[str]:
+    """
+    Métodos que acepta el path de la petición. Starlette solo pone en `Allow`
+    los de la primera ruta que coincide, y aquí cada método de un mismo path
+    (p. ej. GET y PUT /restaurants/{id}) es una ruta distinta.
+    """
+    allowed = [
+        method
+        for method in _HTTP_METHODS
+        if any(route.matches({**request.scope, "method": method})[0] == Match.FULL for route in request.app.router.routes)
+    ]
+    return ", ".join(allowed) or None
+
+
 async def _http_exception_handler(
     request: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
     code = _HTTP_STATUS_CODES.get(exc.status_code, "http_error")
     message = exc.detail if isinstance(exc.detail, str) else "Error en la petición"
-    return error_response(exc.status_code, code, message, headers=exc.headers)
+    headers = exc.headers
+    if exc.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
+        allowed = _allowed_methods(request)
+        if allowed:
+            headers = {**(headers or {}), "Allow": allowed}
+    return error_response(exc.status_code, code, message, headers=headers)
 
 
 async def _unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:

@@ -62,13 +62,13 @@ def get_my_restaurant(
     return service.get_owned_by(user.id)
 
 
-@router.get("/{restaurant_id}", response_model=RestaurantDetail, summary="Detalle de un restaurante", responses=_errors(404))
+@router.get("/{restaurant_id:int}", response_model=RestaurantDetail, summary="Detalle de un restaurante", responses=_errors(404))
 def get_restaurant(restaurant_id: int, service: CatalogService = Depends(get_catalog_service)) -> RestaurantDetail:
     return service.get(restaurant_id)
 
 
 @router.put(
-    "/{restaurant_id}",
+    "/{restaurant_id:int}",
     response_model=RestaurantDetail,
     summary="Editar mi restaurante (Owner)",
     responses=_errors(401, 403, 404),

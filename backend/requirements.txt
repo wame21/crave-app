@@ -24,5 +24,7 @@ psycopg-pool>=3.3,<4
 pytest>=8,<10
 # Cobertura: pytest --cov=services/<dominio>
 pytest-cov>=5,<8
+# Pruebas de contrato generadas a partir del OpenAPI (tests/contract)
+schemathesis>=4,<5
 # Cliente HTTP de fastapi.testclient.TestClient (Starlette usa httpx2 en lugar de httpx)
 httpx2>=2,<3
